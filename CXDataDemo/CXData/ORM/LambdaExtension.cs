@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -31,6 +32,18 @@ namespace CXData.ORM
         }
 
         /// <summary>
+        /// In 查询操作
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="array"></param>
+        /// <returns></returns>
+        public static bool In<T>(this T obj, IEnumerable<T> array)
+        {
+            return true;
+        }
+
+        /// <summary>
         /// Not In 查询操作
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -38,6 +51,18 @@ namespace CXData.ORM
         /// <param name="array"></param>
         /// <returns></returns>
         public static bool NotIn<T>(this T obj, params T[] array)
+        {
+            return true;
+        }
+
+        /// <summary>
+        ///  Not In 查询操作
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="array"></param>
+        /// <returns></returns>
+        public static bool NotIn<T>(this T obj, IEnumerable<T> array)
         {
             return true;
         }
@@ -612,6 +637,45 @@ namespace CXData.ORM
                         {
                             ruesltStr = objitem.ToString();
                             ruesltStr += ",";
+                        }
+                    }
+                }
+                ruesltStr = ruesltStr.TrimEnd(',');
+            }
+            else if (result is IList || result is IEnumerable)
+            {
+                IList resulitList = result as IList;
+                if (resulitList != null)
+                {
+                    foreach (var item in resulitList)
+                    {
+                        if (item == null)
+                        {
+                            ruesltStr += "NULL";
+                            ruesltStr += ",";
+                        }
+                        else
+                        {
+                            if (dbparaList != null && analyType != AnalyType.Order)
+                            {
+                                DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex, item.GetType().GetDbType());
+                                para.Value = item;
+                                if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                                {
+                                    if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
+                                    {
+                                        para.ParameterName = "@" + dataFliex + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
+                                    }
+                                    dbparaList.Add(para);
+                                }
+                                ruesltStr += para.ParameterName;
+                                ruesltStr += ",";
+                            }
+                            else
+                            {
+                                ruesltStr = item.ToString();
+                                ruesltStr += ",";
+                            }
                         }
                     }
                 }
