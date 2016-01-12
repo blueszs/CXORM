@@ -642,40 +642,37 @@ namespace CXData.ORM
                 }
                 ruesltStr = ruesltStr.TrimEnd(',');
             }
-            else if (result is IList || result is IEnumerable)
+            else if (result is IList)
             {
                 IList resulitList = result as IList;
-                if (resulitList != null)
+                foreach (var item in resulitList)
                 {
-                    foreach (var item in resulitList)
+                    if (item == null)
                     {
-                        if (item == null)
+                        ruesltStr += "NULL";
+                        ruesltStr += ",";
+                    }
+                    else
+                    {
+                        if (dbparaList != null && analyType != AnalyType.Order)
                         {
-                            ruesltStr += "NULL";
+                            DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex, item.GetType().GetDbType());
+                            para.Value = item;
+                            if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                            {
+                                if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
+                                {
+                                    para.ParameterName = "@" + dataFliex + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
+                                }
+                                dbparaList.Add(para);
+                            }
+                            ruesltStr += para.ParameterName;
                             ruesltStr += ",";
                         }
                         else
                         {
-                            if (dbparaList != null && analyType != AnalyType.Order)
-                            {
-                                DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex, item.GetType().GetDbType());
-                                para.Value = item;
-                                if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
-                                {
-                                    if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
-                                    {
-                                        para.ParameterName = "@" + dataFliex + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
-                                    }
-                                    dbparaList.Add(para);
-                                }
-                                ruesltStr += para.ParameterName;
-                                ruesltStr += ",";
-                            }
-                            else
-                            {
-                                ruesltStr = item.ToString();
-                                ruesltStr += ",";
-                            }
+                            ruesltStr = item.ToString();
+                            ruesltStr += ",";
                         }
                     }
                 }
