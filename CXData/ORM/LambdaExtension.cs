@@ -38,7 +38,7 @@ namespace CXData.ORM
         /// <param name="obj"></param>
         /// <param name="array"></param>
         /// <returns></returns>
-        public static bool In<T>(this T obj, IEnumerable<T> array)
+        public static bool In<T>(this T obj, IList<T> array)
         {
             return true;
         }
@@ -62,7 +62,7 @@ namespace CXData.ORM
         /// <param name="obj"></param>
         /// <param name="array"></param>
         /// <returns></returns>
-        public static bool NotIn<T>(this T obj, IEnumerable<T> array)
+        public static bool NotIn<T>(this T obj, IList<T> array)
         {
             return true;
         }
@@ -998,6 +998,7 @@ namespace CXData.ORM
                 StringBuilder columnNamestr = new StringBuilder();
                 StringBuilder columnValuestr = new StringBuilder();
                 var queryps = ps.Where(x => x.CanRead);
+                bool identity = false;
                 foreach (System.Reflection.PropertyInfo i in queryps)
                 {
                     try
@@ -1007,6 +1008,7 @@ namespace CXData.ORM
                         {
                             if (cusAttrs[0].Identity)
                             {
+                                identity = true;
                                 continue;
                             }
                         }
@@ -1045,10 +1047,10 @@ namespace CXData.ORM
                     switch (DbHelper.GetDatabaseType())
                     {
                         case DatabaseType.SqlServer:
-                            sql += "SELECT SCOPE_IDENTITY();";
+                            sql += identity ? "SELECT SCOPE_IDENTITY();" : "SELECT @@ROWCOUNT;";
                             break;
                         case DatabaseType.MySql:
-                            sql += "SELECT LAST_INSERT_ID();";
+                            sql += identity ? "SELECT LAST_INSERT_ID();": "SELECT ROW_COUNT();";
                             break;
                     }
                     return sql;
