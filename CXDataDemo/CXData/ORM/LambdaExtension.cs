@@ -423,8 +423,12 @@ namespace CXData.ORM
                                 OperandType.Left);
                             string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
                                 OperandType.Right);
-                            if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
+                            if (!string.IsNullOrEmpty(leftStr))
                             {
+                                if (string.IsNullOrEmpty(rightStr))
+                                {
+                                    rightStr = "NULL";
+                                }
                                 ruesltStr = string.Format("{0} IN({1})", leftStr, rightStr);
                             }
                         }
@@ -435,8 +439,12 @@ namespace CXData.ORM
                                 OperandType.Left);
                             string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
                                 OperandType.Right);
-                            if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
+                            if (!string.IsNullOrEmpty(leftStr))
                             {
+                                if (string.IsNullOrEmpty(rightStr))
+                                {
+                                    rightStr = "NULL";
+                                }
                                 ruesltStr = string.Format("{0} NOT IN ({1})", leftStr, rightStr);
                             }
                         }
