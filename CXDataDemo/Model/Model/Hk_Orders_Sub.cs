@@ -6,13 +6,14 @@ namespace Model.Model
     /// <summary>
  	/// hk_orders_sub
  	/// </summary>
-	public class Hk_Orders_Sub
+ 	[Table(Name = "Hk_Orders_Sub")]
+	public class OrdersSub
     {
         #region Public Properties
         /// <summary>
         /// id
         /// </summary>
-        [Table(Identity = true)]
+        [Identity]
         public int? Id
         {
             get;

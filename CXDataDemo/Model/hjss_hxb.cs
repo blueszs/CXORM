@@ -31,7 +31,7 @@ namespace Model
             set;
         }
 
-        public Hk_Orders_Sub Hk_Orders_Sub
+        public OrdersSub Hk_Orders_Sub
         {
             get;
             set;

@@ -47,10 +47,10 @@ namespace MvcApp.Controllers
             Response.Write(datlist.ToJson() + "<br/>");
             Hk_Region rModel = data.Hk_Region.SelectFirst(x => x.Region_Id == 2);
             Response.Write(rModel.ToJson() + "<br/>");
-            Expression<Func<Hk_Orders, Hk_Orders_Sub, Hk_Order_Goods, bool>> fWhereOrder = (x, y, z) => x.Id == 1000;
-            Hk_Order_Goods order = data.Hk_Orders.JoinOnFirst(new Hk_Orders_Sub(), JoinType.Inner, x => x.Order_No, y => y.Order_No, new Hk_Orders(), new Hk_Order_Goods(), JoinType.Inner, x => x.Order_No, z => z.OrderNo,
+            Expression<Func<Hk_Orders, OrdersSub, Hk_Order_Goods, bool>> fWhereOrder = (x, y, z) => x.Id == 1000;
+            Hk_Order_Goods order = data.Hk_Orders.JoinOnFirst(new OrdersSub(), JoinType.Inner, x => x.Order_No, y => y.Order_No, new Hk_Orders(), new Hk_Order_Goods(), JoinType.Inner, x => x.Order_No, z => z.OrderNo,
                (x, y, z) => z, fWhereOrder, null);
-            Hk_Orders order2 = data.Hk_Orders.JoinOnFirst(new Hk_Orders_Sub(), JoinType.Inner, x => x.Order_No, y => y.Order_No, new Hk_Orders_Sub(), new Hk_Order_Goods(), JoinType.Inner, y => y.Sub_Order_No, z => z.SubOrderNo,
+            Hk_Orders order2 = data.Hk_Orders.JoinOnFirst(new OrdersSub(), JoinType.Inner, x => x.Order_No, y => y.Order_No, new OrdersSub(), new Hk_Order_Goods(), JoinType.Inner, y => y.Sub_Order_No, z => z.SubOrderNo,
                (x, y, z) => x, fWhereOrder, null);
             Response.Write("主数据库3表连接<br/>");
             Response.Write(order.ToJson() + "<br/>");

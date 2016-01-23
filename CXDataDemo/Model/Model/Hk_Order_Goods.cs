@@ -12,7 +12,7 @@ namespace Model.Model
         /// <summary>
         /// 自增ID
         /// </summary>
-        [Table(Identity = true)]
+        [Identity]
         public int? Id
         {
             get;

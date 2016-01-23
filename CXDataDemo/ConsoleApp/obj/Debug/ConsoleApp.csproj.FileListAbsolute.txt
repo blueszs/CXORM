@@ -49,3 +49,17 @@ D:\CXORM\CXDataDemo\ConsoleApp\bin\Debug\zh-Hans\System.Net.Http.resources.dll
 D:\CXORM\CXDataDemo\ConsoleApp\obj\Debug\ConsoleApp.csprojResolveAssemblyReference.cache
 D:\CXORM\CXDataDemo\ConsoleApp\obj\Debug\ConsoleApp.exe
 D:\CXORM\CXDataDemo\ConsoleApp\obj\Debug\ConsoleApp.pdb
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\ConsoleApp.exe.config
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\ConsoleApp.exe
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\ConsoleApp.pdb
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\CXData.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\Model.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\System.Net.Http.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\MySql.Data.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\CXData.pdb
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\Model.pdb
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\System.Net.Http.xml
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Debug\zh-Hans\System.Net.Http.resources.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\obj\Debug\ConsoleApp.csprojResolveAssemblyReference.cache
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\obj\Debug\ConsoleApp.exe
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\obj\Debug\ConsoleApp.pdb

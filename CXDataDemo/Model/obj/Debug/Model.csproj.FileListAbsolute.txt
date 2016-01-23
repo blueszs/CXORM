@@ -42,3 +42,14 @@ D:\CXORM\CXDataDemo\Model\bin\Debug\zh-Hans\System.Net.Http.resources.dll
 D:\CXORM\CXDataDemo\Model\obj\Debug\Model.csprojResolveAssemblyReference.cache
 D:\CXORM\CXDataDemo\Model\obj\Debug\Model.dll
 D:\CXORM\CXDataDemo\Model\obj\Debug\Model.pdb
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\Model.dll
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\Model.pdb
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\CXData.dll
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\System.Net.Http.dll
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\MySql.Data.dll
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\CXData.pdb
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\System.Net.Http.xml
+D:\CXORM\CXORM\CXDataDemo\Model\bin\Debug\zh-Hans\System.Net.Http.resources.dll
+D:\CXORM\CXORM\CXDataDemo\Model\obj\Debug\Model.csprojResolveAssemblyReference.cache
+D:\CXORM\CXORM\CXDataDemo\Model\obj\Debug\Model.dll
+D:\CXORM\CXORM\CXDataDemo\Model\obj\Debug\Model.pdb

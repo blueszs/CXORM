@@ -996,13 +996,13 @@ namespace CXData.ORM
         /// <param name="obje"></param>
         /// <param name="dbparaList"></param>
         /// <returns></returns>
-        public static string GetInsertSql<T>(T obje, List<DbParameter> dbparaList)
+        public static string GetInsertSql<T>(T obje, List<DbParameter> dbparaList) where T : class
         {
             Type type = obje.GetType();
             System.Reflection.PropertyInfo[] ps = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
             if (ps.Length > 0)
             {
-                string tableName = type.Name;
+                string tableName = GetTabName(obje);
                 StringBuilder columnNamestr = new StringBuilder();
                 StringBuilder columnValuestr = new StringBuilder();
                 var queryps = ps.Where(x => x.CanRead);
@@ -1011,14 +1011,11 @@ namespace CXData.ORM
                 {
                     try
                     {
-                        TableAttribute[] cusAttrs = i.GetCustomAttributes(typeof(TableAttribute), true) as TableAttribute[];
-                        if (cusAttrs != null && cusAttrs.Length > 0)
+                        IdentityAttribute[] cusAttrs = i.GetCustomAttributes(typeof(IdentityAttribute), true) as IdentityAttribute[];
+                        if (cusAttrs != null && cusAttrs.Any())
                         {
-                            if (cusAttrs[0].Identity)
-                            {
-                                identity = true;
-                                continue;
-                            }
+                            identity = true;
+                            continue;
                         }
                         string name = i.Name;
                         object obj = i.GetValue(obje, null);
@@ -1076,7 +1073,7 @@ namespace CXData.ORM
         /// <param name="strWhere"></param>
         /// <param name="dbparaList"></param>
         /// <returns></returns>
-        public static string GetUpdateSql<T>(T obje, string[] dataField, string strWhere, List<DbParameter> dbparaList)
+        public static string GetUpdateSql<T>(T obje, string[] dataField, string strWhere, List<DbParameter> dbparaList) where T : class
         {
             Type type = obje.GetType();
             System.Reflection.PropertyInfo[] ps = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
@@ -1087,6 +1084,7 @@ namespace CXData.ORM
                 var propertyInfos = query as System.Reflection.PropertyInfo[] ?? query.ToArray();
                 if (propertyInfos.Any())
                 {
+                    string tabName = GetTabName(obje);
                     foreach (System.Reflection.PropertyInfo i in propertyInfos)
                     {
                         string name = i.Name;
@@ -1095,7 +1093,7 @@ namespace CXData.ORM
                         {
                             if (string.IsNullOrEmpty(sql))
                             {
-                                sql = string.Format("UPDATE {0} SET ", type.Name);
+                                sql = string.Format("UPDATE {0} SET ", tabName);
                             }
                             else
                             {
@@ -1117,7 +1115,7 @@ namespace CXData.ORM
                         {
                             if (string.IsNullOrEmpty(sql))
                             {
-                                sql = string.Format("UPDATE {0} SET ", type.Name);
+                                sql = string.Format("UPDATE {0} SET ", tabName);
                             }
                             else
                             {
@@ -1142,7 +1140,7 @@ namespace CXData.ORM
         /// <typeparam name="T"></typeparam>
         /// <param name="funColumns"></param>
         /// <returns></returns>
-        public static string[] GetUpdateColumns<T>(Expression<Func<T, object[]>> funColumns) where T : new()
+        public static string[] GetUpdateColumns<T>(Expression<Func<T, object[]>> funColumns) where T : class
         {
             List<string> strColumns = new List<string>();
             if (funColumns != null)
@@ -1224,6 +1222,29 @@ namespace CXData.ORM
             return Expression.Lambda(exp).Compile().DynamicInvoke();
         }
 
+        /// <summary>
+        /// 获取实体映射的表名
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="obje"></param>
+        /// <returns></returns>
+        public static string GetTabName<T>(T obje) where T : class
+        {
+            string tabName = "";
+            TableAttribute[] cusAttrs = typeof(T).GetCustomAttributes(typeof(TableAttribute), true) as TableAttribute[];
+            if (cusAttrs != null && cusAttrs.Length > 0)
+            {
+                if (!string.IsNullOrEmpty(cusAttrs[0].Name))
+                {
+                    tabName = cusAttrs[0].Name;
+                }
+            }
+            else
+            {
+                tabName = typeof(T).Name;
+            }
+            return tabName;
+        }
         #endregion
     }
 }
