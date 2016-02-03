@@ -6,6 +6,7 @@ namespace CXData.ORM
     /// 字段自增长属性
     /// 20150625-周盛-添加
     /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
     public class IdentityAttribute : Attribute
     {
     }
@@ -14,6 +15,7 @@ namespace CXData.ORM
     /// 表属性
     /// 20150625-周盛-添加
     /// </summary>
+    [AttributeUsage(AttributeTargets.Class)]
     public class TableAttribute : Attribute
     {
         /// <summary>
