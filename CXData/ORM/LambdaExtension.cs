@@ -629,12 +629,19 @@ namespace CXData.ORM
                     {
                         if (dbparaList != null && analyType != AnalyType.Order)
                         {
-                            DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex, objitem.GetType().GetDbType(), objitem);
-                            if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                            DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex,
+                                objitem.GetType().GetDbType(), objitem);
+                            if (
+                                !dbparaList.Any(
+                                    x =>
+                                        x.ParameterName == para.ParameterName && x.DbType == para.DbType &&
+                                        x.Value.Equals(para.Value)))
                             {
                                 if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                 {
-                                    para.ParameterName = "@" + dataFliex + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
+                                    para.ParameterName = "@" + dataFliex +
+                                                         dbparaList.Count(
+                                                             x => x.ParameterName.StartsWith(para.ParameterName));
                                 }
                                 dbparaList.Add(para);
                             }
@@ -664,13 +671,20 @@ namespace CXData.ORM
                     {
                         if (dbparaList != null && analyType != AnalyType.Order)
                         {
-                            DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex, item.GetType().GetDbType());
+                            DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex,
+                                item.GetType().GetDbType());
                             para.Value = item;
-                            if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                            if (
+                                !dbparaList.Any(
+                                    x =>
+                                        x.ParameterName == para.ParameterName && x.DbType == para.DbType &&
+                                        x.Value.Equals(para.Value)))
                             {
                                 if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                 {
-                                    para.ParameterName = "@" + dataFliex + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
+                                    para.ParameterName = "@" + dataFliex +
+                                                         dbparaList.Count(
+                                                             x => x.ParameterName.StartsWith(para.ParameterName));
                                 }
                                 dbparaList.Add(para);
                             }
@@ -696,18 +710,27 @@ namespace CXData.ORM
                 {
                     if (dbparaList != null && analyType != AnalyType.Order)
                     {
-                        DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex, result.GetType().GetDbType(), result);
-                        if (!dbparaList.IsAny(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                        DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex,
+                            result.GetType().GetDbType(), result);
+                        if (
+                            !dbparaList.IsAny(
+                                x =>
+                                    x.ParameterName == para.ParameterName && x.DbType == para.DbType &&
+                                    x.Value.Equals(para.Value)))
                         {
                             if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                             {
-                                para.ParameterName = "@" + dataFliex + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
+                                para.ParameterName = "@" + dataFliex +
+                                                     dbparaList.Count(
+                                                         x => x.ParameterName.StartsWith(para.ParameterName));
                             }
                             dbparaList.Add(para);
                         }
                         return para.ParameterName;
                     }
-                    ruesltStr = result.GetType() == typeof(ValueType) ? result.ToString() : string.Format("'{0}'", result);
+                    ruesltStr = result.GetType() == typeof(ValueType)
+                        ? result.ToString()
+                        : string.Format("'{0}'", result);
                 }
             }
             return ruesltStr;
@@ -864,16 +887,25 @@ namespace CXData.ORM
                 case ExpressionType.ConvertChecked:
                     {
                         var convertExpression = exp as UnaryExpression;
-                        if (convertExpression != null && convertExpression.Operand.NodeType == ExpressionType.Call)
+                        if (analyType != AnalyType.Column)
                         {
-                            string[] methodArray = { "ROWCOUNT", "LEN" };
-                            var callExpression = convertExpression.Operand as MethodCallExpression;
-                            if (callExpression != null && methodArray.Any(x => x == callExpression.Method.Name.ToUpper()))
+                            if (convertExpression != null && convertExpression.Operand.NodeType == ExpressionType.Call)
                             {
-                                return CallExpression(callExpression, dbparaList, analyType, isAliases);
+                                string[] methodArray = { "ROWCOUNT", "LEN" };
+                                var callExpression = convertExpression.Operand as MethodCallExpression;
+                                if (callExpression != null &&
+                                    methodArray.Any(x => x == callExpression.Method.Name.ToUpper()))
+                                {
+                                    return CallExpression(callExpression, dbparaList, analyType, isAliases);
+                                }
                             }
+                            return DynamicInvokeExpression(exp, exp.NodeType.ToString(), analyType, dbparaList);
                         }
-                        return DynamicInvokeExpression(exp, exp.NodeType.ToString(), analyType, dbparaList);
+                        if (convertExpression != null)
+                        {
+                            return ExpressionRouter(convertExpression.Operand, dbparaList, analyType, isAliases, operaType);
+                        }
+                        return "";
                     }
                 case ExpressionType.Constant:
                     {
