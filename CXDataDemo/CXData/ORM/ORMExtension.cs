@@ -86,7 +86,7 @@ namespace CXData.ORM
                 }
                 var updateColumns = LambdaExtension.GetUpdateColumns(funColumns);
                 string sql = LambdaExtension.GetUpdateSql(updateEntity, updateColumns, whereStr, dbparaList);
-                if (string.IsNullOrEmpty(sql))
+                if (!string.IsNullOrEmpty(sql))
                 {
                     return DbHelper.ExecuteNonQuery(CommandType.Text, sql, dbparaList.ToArray()) > 0;
                 }
@@ -127,7 +127,7 @@ namespace CXData.ORM
                 }
                 var updateColumns = LambdaExtension.GetUpdateColumns(funColumns);
                 string sql = LambdaExtension.GetUpdateSql(entity, updateColumns, whereStr, dbparaList);
-                if (string.IsNullOrEmpty(sql))
+                if (!string.IsNullOrEmpty(sql))
                 {
                     return DbHelper.ExecuteNonQuery(CommandType.Text, sql, dbparaList.ToArray()) > 0;
                 }
