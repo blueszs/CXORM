@@ -20,6 +20,15 @@ namespace MvcApp.Controllers
         public ActionResult Index()
         {
             hjss_hxb data = new hjss_hxb();
+            Hk_LotteryQuestion modelqueston = new Hk_LotteryQuestion
+            {
+                ProductName = "aaa",
+                ProductImage = "",
+                ProductUrl = "",
+            };
+            data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName), x => x.Id == 1);
+            modelqueston.ProductName = "";
+            data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName), x => x.Id == 1);
             Response.Write("获取实体列表<br/>");
             List<Hk_Region> list = data.Hk_Region.SelectList(x => x.Region_Id > 1);
             Response.Write(list.ToJson() + "<br/>");

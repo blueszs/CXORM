@@ -1070,7 +1070,6 @@ namespace CXData.ORM
                                 dbparaList.Add(para);
                             }
                             columnValuestr.Append(para.ParameterName);
-
                         }
                     }
                     catch
@@ -1121,40 +1120,25 @@ namespace CXData.ORM
                     {
                         string name = i.Name;
                         object obj = i.GetValue(obje, null);
-                        if (obj != null)
+                        if (string.IsNullOrEmpty(sql))
                         {
-                            if (string.IsNullOrEmpty(sql))
-                            {
-                                sql = string.Format("UPDATE {0} SET ", tabName);
-                            }
-                            else
-                            {
-                                sql += ",";
-                            }
-                            Type attrValType = i.PropertyType.IsGenericType && i.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? Nullable.GetUnderlyingType(i.PropertyType) : i.PropertyType;
-                            DbParameter para = DbHelper.CreateInDbParameter("@" + name, attrValType.GetDbType(), obj);
-                            if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
-                            {
-                                if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
-                                {
-                                    para.ParameterName = "@" + name + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
-                                }
-                                dbparaList.Add(para);
-                            }
-                            sql += string.Format("{0}={1}", name, para.ParameterName);
+                            sql = string.Format("UPDATE {0} SET ", tabName);
                         }
                         else
                         {
-                            if (string.IsNullOrEmpty(sql))
-                            {
-                                sql = string.Format("UPDATE {0} SET ", tabName);
-                            }
-                            else
-                            {
-                                sql += ",";
-                            }
-                            sql += string.Format("{0}= NULL", name);
+                            sql += ",";
                         }
+                        Type attrValType = i.PropertyType.IsGenericType && i.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? Nullable.GetUnderlyingType(i.PropertyType) : i.PropertyType;
+                        DbParameter para = DbHelper.CreateInDbParameter("@" + name, attrValType.GetDbType(), obj);
+                        if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                        {
+                            if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
+                            {
+                                para.ParameterName = "@" + name + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
+                            }
+                            dbparaList.Add(para);
+                        }
+                        sql += string.Format("{0}={1}", name, para.ParameterName);
                     }
                 }
                 if (!string.IsNullOrEmpty(sql) && !string.IsNullOrEmpty(strWhere))
@@ -1175,16 +1159,13 @@ namespace CXData.ORM
         public static string[] GetUpdateColumns<T>(Expression<Func<T, object[]>> funColumns) where T : class
         {
             List<string> strColumns = new List<string>();
-            if (funColumns != null)
+            MethodCallExpression methodCall = funColumns?.Body as MethodCallExpression;
+            if (methodCall != null && methodCall.Method.Name.ToUpper() == "COLUMNS")
             {
-                MethodCallExpression methodCall = funColumns.Body as MethodCallExpression;
-                if (methodCall != null && methodCall.Method.Name.ToUpper() == "COLUMNS")
+                NewArrayExpression expressionParams = methodCall.Arguments[1] as NewArrayExpression;
+                if (expressionParams != null && expressionParams.Expressions.Count > 0)
                 {
-                    NewArrayExpression expressionParams = methodCall.Arguments[1] as NewArrayExpression;
-                    if (expressionParams != null && expressionParams.Expressions.Count > 0)
-                    {
-                        strColumns.AddRange(expressionParams.Expressions.Select(ex => ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left)));
-                    }
+                    strColumns.AddRange(expressionParams.Expressions.Select(ex => ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left)));
                 }
             }
             string[] updateColumns = strColumns.ToArray();

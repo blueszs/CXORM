@@ -42,5 +42,11 @@ namespace Model
             get;
             set;
         }
+
+        public Hk_LotteryQuestion Hk_LotteryQuestion
+        {
+            get;
+            set;
+        }
     }
 }

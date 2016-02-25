@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="hxb_logs.cs" />
+    <Compile Include="Model\Hk_LotteryQuestion.cs" />
     <Compile Include="Model\HkRegionAutoCheck.cs" />
     <Compile Include="Model\Hk_HotWord.cs" />
     <Compile Include="Model\Hk_Orders.cs" />
