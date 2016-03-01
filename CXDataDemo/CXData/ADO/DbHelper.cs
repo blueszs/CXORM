@@ -226,9 +226,19 @@ namespace CXData.ADO
             return CreateDbParameter(paraName, type, size, value, ParameterDirection.Input);
         }
 
+        public static DbParameter CreateInDbParameter(string paraName, int size, object value)
+        {
+            return CreateDbParameter(paraName, size, value, ParameterDirection.Input);
+        }
+
         public static DbParameter CreateInDbParameter(string paraName, DbType type, object value)
         {
             return CreateDbParameter(paraName, type, 0, value, ParameterDirection.Input);
+        }
+
+        public static DbParameter CreateInDbParameter(string paraName, object value)
+        {
+            return CreateDbParameter(paraName, 0, value, ParameterDirection.Input);
         }
 
         public static KeyValuePair<string, DbParameter> CreateKeyValInDbParameter(string dataField, string paraName, DbType type, object value)
@@ -236,9 +246,19 @@ namespace CXData.ADO
             return new KeyValuePair<string, DbParameter>(dataField, CreateDbParameter(paraName, type, 0, value, ParameterDirection.Input));
         }
 
+        public static KeyValuePair<string, DbParameter> CreateKeyValInDbParameter(string dataField, string paraName, object value)
+        {
+            return new KeyValuePair<string, DbParameter>(dataField, CreateDbParameter(paraName, 0, value, ParameterDirection.Input));
+        }
+
         public static DbParameter CreateOutDbParameter(string paraName, DbType type, int size)
         {
             return CreateDbParameter(paraName, type, size, null, ParameterDirection.Output);
+        }
+
+        public static DbParameter CreateOutDbParameter(string paraName, int size)
+        {
+            return CreateDbParameter(paraName, size, null, ParameterDirection.Output);
         }
 
         public static DbParameter CreateOutDbParameter(string paraName, DbType type)
@@ -246,9 +266,19 @@ namespace CXData.ADO
             return CreateDbParameter(paraName, type, 0, null, ParameterDirection.Output);
         }
 
+        public static DbParameter CreateOutDbParameter(string paraName)
+        {
+            return CreateDbParameter(paraName, 0, null, ParameterDirection.Output);
+        }
+
         public static DbParameter CreateReturnDbParameter(string paraName, DbType type, int size)
         {
             return CreateDbParameter(paraName, type, size, null, ParameterDirection.ReturnValue);
+        }
+
+        public static DbParameter CreateReturnDbParameter(string paraName, int size)
+        {
+            return CreateDbParameter(paraName, size, null, ParameterDirection.ReturnValue);
         }
 
         public static DbParameter CreateReturnDbParameter(string paraName, DbType type)
@@ -256,16 +286,30 @@ namespace CXData.ADO
             return CreateDbParameter(paraName, type, 0, null, ParameterDirection.ReturnValue);
         }
 
+        public static DbParameter CreateReturnDbParameter(string paraName)
+        {
+            return CreateDbParameter(paraName, 0, null, ParameterDirection.ReturnValue);
+        }
+
         public static DbParameter CreateDbParameter(string paraName, DbType type, int size, object value, ParameterDirection direction)
         {
-            DbParameter para = _dataProviders.GetDbParameter();
-            para.ParameterName = paraName;
+            DbParameter para = _dataProviders.GetDbParameter(paraName, value ?? DBNull.Value);
             if (size != 0)
             {
                 para.Size = size;
             }
             para.DbType = type;
-            para.Value = value ?? DBNull.Value;
+            para.Direction = direction;
+            return para;
+        }
+
+        public static DbParameter CreateDbParameter(string paraName, int size, object value, ParameterDirection direction)
+        {
+            DbParameter para = _dataProviders.GetDbParameter(paraName, value ?? DBNull.Value);
+            if (size != 0)
+            {
+                para.Size = size;
+            }
             para.Direction = direction;
             return para;
         }

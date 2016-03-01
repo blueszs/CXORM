@@ -1,0 +1,14 @@
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\ConsoleApp.exe.config
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\ConsoleApp.exe
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\ConsoleApp.pdb
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\CXData.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\Model.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\System.Net.Http.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\MySql.Data.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\CXData.pdb
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\Model.pdb
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\System.Net.Http.xml
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\bin\Release\zh-Hans\System.Net.Http.resources.dll
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\obj\Release\ConsoleApp.csprojResolveAssemblyReference.cache
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\obj\Release\ConsoleApp.exe
+D:\CXORM\CXORM\CXDataDemo\ConsoleApp\obj\Release\ConsoleApp.pdb

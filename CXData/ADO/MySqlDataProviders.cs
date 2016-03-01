@@ -39,5 +39,10 @@ namespace CXData.ADO
         {
             return new MySqlParameter();
         }
+
+        public DbParameter GetDbParameter(string dbParaName, object oVal)
+        {
+            return new MySqlParameter(dbParaName, oVal);
+        }
     }
 }

@@ -25,10 +25,18 @@ namespace MvcApp.Controllers
                 ProductName = "aaa",
                 ProductImage = "",
                 ProductUrl = "",
+                ShareTitle = null,
+                ShareDesc="abc"
             };
-            data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName), x => x.Id == 1);
+            data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName,x.ShareTitle), x => x.Id == 1);
             modelqueston.ProductName = "";
             data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName), x => x.Id == 1);
+            Hk_LotteryQuestion modelsf = data.Hk_LotteryQuestion.SelectFirst(x => x.ShareTitle == null);
+            if (modelsf != null)
+            {
+                Response.Write(modelsf.ToJson() + "<br/>");
+            }
+            //var a = data.Hk_Region.Join(new Hk_Region_AutoCheck(), JoinType.Left, x => x.Region_Id,y => y.Region_Id).;
             Response.Write("获取实体列表<br/>");
             List<Hk_Region> list = data.Hk_Region.SelectList(x => x.Region_Id > 1);
             Response.Write(list.ToJson() + "<br/>");

@@ -19,5 +19,7 @@ namespace CXData.ADO
         DbDataAdapter GetDbDataAdappter();
 
         DbParameter GetDbParameter();
+
+        DbParameter GetDbParameter(string dbParaName, object oVal);
     }
 }

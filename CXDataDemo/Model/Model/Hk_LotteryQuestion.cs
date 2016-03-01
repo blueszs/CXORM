@@ -171,6 +171,24 @@ namespace Model.Model
             get;
             set;
         }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ShareTitle
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// 竞猜商品链接
+        /// </summary>
+        public string ShareDesc
+        {
+            get;
+            set;
+        }
         #endregion Public Properties
     }
 }

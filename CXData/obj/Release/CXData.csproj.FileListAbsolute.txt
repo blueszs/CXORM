@@ -4,3 +4,4 @@ D:\CXORM\CXORM\CXDataDemo\CXData\bin\Release\CXData.pdb
 D:\CXORM\CXORM\CXDataDemo\CXData\bin\Release\MySql.Data.dll
 D:\CXORM\CXORM\CXDataDemo\CXData\obj\Release\CXData.dll
 D:\CXORM\CXORM\CXDataDemo\CXData\obj\Release\CXData.pdb
+D:\CXORM\CXORM\CXDataDemo\CXData\obj\Release\CXData.csprojResolveAssemblyReference.cache

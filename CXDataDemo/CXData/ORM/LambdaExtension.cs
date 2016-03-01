@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Linq.Expressions;
@@ -247,29 +248,6 @@ namespace CXData.ORM
         {
             return default(TRt);
         }
-
-        /// <summary>
-        /// 数据库判断Name=''
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public static bool IsEmpty<T>(this T obj)
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// 数据库判断不为null
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public static bool IsNotEmpty<T>(this T obj)
-        {
-            return true;
-        }
-
         #endregion
 
         #region 表达式拼接
@@ -529,24 +507,6 @@ namespace CXData.ORM
                             }
                         }
                         break;
-                    case "ISEMPTY":
-                        {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], null, analyType, isAliases, OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr))
-                            {
-                                ruesltStr = string.Format(" {0} IS NULL", leftStr);
-                            }
-                        }
-                        break;
-                    case "ISNOTEMPTY":
-                        {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], null, analyType, isAliases, OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr))
-                            {
-                                ruesltStr = string.Format(" {0} IS NOT NULL AND {0} <> ''", leftStr);
-                            }
-                        }
-                        break;
                     case "LEN":
                         {
                             string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
@@ -629,13 +589,11 @@ namespace CXData.ORM
                     {
                         if (dbparaList != null && analyType != AnalyType.Order)
                         {
-                            DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex,
-                                objitem.GetType().GetDbType(), objitem);
+                            DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex, objitem);
                             if (
                                 !dbparaList.Any(
                                     x =>
-                                        x.ParameterName == para.ParameterName && x.DbType == para.DbType &&
-                                        x.Value.Equals(para.Value)))
+                                        x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                             {
                                 if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                 {
@@ -671,14 +629,8 @@ namespace CXData.ORM
                     {
                         if (dbparaList != null && analyType != AnalyType.Order)
                         {
-                            DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex,
-                                item.GetType().GetDbType());
-                            para.Value = item;
-                            if (
-                                !dbparaList.Any(
-                                    x =>
-                                        x.ParameterName == para.ParameterName && x.DbType == para.DbType &&
-                                        x.Value.Equals(para.Value)))
+                            DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex, item);
+                            if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                             {
                                 if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                 {
@@ -710,13 +662,8 @@ namespace CXData.ORM
                 {
                     if (dbparaList != null && analyType != AnalyType.Order)
                     {
-                        DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex,
-                            result.GetType().GetDbType(), result);
-                        if (
-                            !dbparaList.IsAny(
-                                x =>
-                                    x.ParameterName == para.ParameterName && x.DbType == para.DbType &&
-                                    x.Value.Equals(para.Value)))
+                        DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex, result);
+                        if (!dbparaList.IsAny(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                         {
                             if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                             {
@@ -918,8 +865,8 @@ namespace CXData.ORM
                             }
                             if (dbparaList != null && analyType != AnalyType.Order)
                             {
-                                DbParameter para = DbHelper.CreateInDbParameter("@" + ce.NodeType, ce.Value.GetType().GetDbType(), ce.Value);
-                                if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                                DbParameter para = DbHelper.CreateInDbParameter("@" + ce.NodeType, ce.Value);
+                                if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                                 {
                                     if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                     {
@@ -1060,8 +1007,8 @@ namespace CXData.ORM
                             }
                             columnNamestr.Append(name);
                             Type attrValType = i.PropertyType.IsGenericType && i.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? Nullable.GetUnderlyingType(i.PropertyType) : i.PropertyType;
-                            DbParameter para = DbHelper.CreateInDbParameter("@" + name, attrValType.GetDbType(), obj);
-                            if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                            DbParameter para = DbHelper.CreateInDbParameter("@" + name, obj);
+                            if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                             {
                                 if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                 {
@@ -1129,8 +1076,8 @@ namespace CXData.ORM
                             sql += ",";
                         }
                         Type attrValType = i.PropertyType.IsGenericType && i.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? Nullable.GetUnderlyingType(i.PropertyType) : i.PropertyType;
-                        DbParameter para = DbHelper.CreateInDbParameter("@" + name, attrValType.GetDbType(), obj);
-                        if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.DbType == para.DbType && x.Value.Equals(para.Value)))
+                        DbParameter para = DbHelper.CreateInDbParameter("@" + name, obj);
+                        if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                         {
                             if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                             {
