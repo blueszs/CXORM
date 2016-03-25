@@ -6,7 +6,7 @@ namespace CXData.ORM
     /// 字段自增长属性
     /// 20150625-周盛-添加
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public class IdentityAttribute : Attribute
     {
     }
@@ -15,7 +15,7 @@ namespace CXData.ORM
     /// 表属性
     /// 20150625-周盛-添加
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class TableAttribute : Attribute
     {
         /// <summary>

@@ -26,12 +26,12 @@ namespace MvcApp.Controllers
                 ProductImage = "",
                 ProductUrl = "",
                 ShareTitle = null,
-                ShareDesc="abc"
+                ShareDesc = "abc"
             };
-            data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName,x.ShareTitle), x => x.Id == 1);
+            data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName, x.ShareTitle), x => x.Id == 1);
             modelqueston.ProductName = "";
             data.Hk_LotteryQuestion.UpdateSet(modelqueston, x => x.Columns(x.ProductName), x => x.Id == 1);
-            Hk_LotteryQuestion modelsf = data.Hk_LotteryQuestion.SelectFirst(x => x.ShareTitle == null);
+            Hk_LotteryQuestion modelsf = data.Hk_LotteryQuestion.SelectFirst(x => x.ShareTitle == null && x.Id > 0);
             if (modelsf != null)
             {
                 Response.Write(modelsf.ToJson() + "<br/>");
@@ -56,13 +56,14 @@ namespace MvcApp.Controllers
             int num = 0;
             Response.Write("2表连表分组查询实体返回第三种类型实体<br/>");
             List<HkRegionAutoCheck> datlist = data.Hk_Region.JoinGroupByList(new Hk_Region_AutoCheck(), JoinType.Left, x => x.Region_Id,
-                y => y.Region_Id, (x, y) => new {x.Name }, x => new HkRegionAutoCheck
+                y => y.Region_Id, (x, y) => new { x.Name }, x => new HkRegionAutoCheck
                 {
                     RegionName = x.Name,
                     IsCommAutoCheck = x.Name.Len()
                 }, fWhere, null, 0, 1, ref num);
             Response.Write(datlist.ToJson() + "<br/>");
             Hk_Region rModel = data.Hk_Region.SelectFirst(x => x.Region_Id == 2);
+            OrdersSub ssub = data.Hk_Orders.SelectFirst(x => x.Id > 100, x => new OrdersSub { Id = x.Id, Jgid = x.Jgid, Order_No = x.Order_No, Sub_Order_No = x.Order_No });
             Response.Write(rModel.ToJson() + "<br/>");
             Expression<Func<Hk_Orders, OrdersSub, Hk_Order_Goods, bool>> fWhereOrder = (x, y, z) => x.Id == 1000;
             Hk_Order_Goods order = data.Hk_Orders.JoinOnFirst(new OrdersSub(), JoinType.Inner, x => x.Order_No, y => y.Order_No, new Hk_Orders(), new Hk_Order_Goods(), JoinType.Inner, x => x.Order_No, z => z.OrderNo,

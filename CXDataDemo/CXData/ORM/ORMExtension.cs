@@ -27,27 +27,14 @@ namespace CXData.ORM
         {
             List<DbParameter> dbparaList = new List<DbParameter>();
             string sql = string.Format("DELETE FROM {0}", LambdaExtension.GetTabName(entity));
+            string whereStr = string.Empty;
             if (func != null)
             {
-                string whereStr;
-                var body = func.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, false);
-                    if (!string.IsNullOrEmpty(whereStr))
-                    {
-                        sql += string.Format(" WHERE {0}", whereStr);
-                    }
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, false);
-                    if (!string.IsNullOrEmpty(whereStr))
-                    {
-                        sql += string.Format(" WHERE {0}", whereStr);
-                    }
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, false, OperandType.Left);
+            }
+            if (!string.IsNullOrEmpty(whereStr))
+            {
+                sql += string.Format(" WHERE {0}", whereStr);
             }
             return DbHelper.ExecuteNonQuery(CommandType.Text, sql, dbparaList.ToArray()) > 0;
         }
@@ -56,12 +43,13 @@ namespace CXData.ORM
         /// 根据条件更新数据库中对应的实体数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
         /// <param name="entity"></param>
         /// <param name="updateEntity"></param>
         /// <param name="funColumns"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static bool UpdateSet<T>(this T entity, T updateEntity, Expression<Func<T, object[]>> funColumns, Expression<Func<T, bool>> func) where T : class
+        public static bool UpdateSet<T, TKey>(this T entity, T updateEntity, Expression<Func<T, TKey>> funColumns, Expression<Func<T, bool>> func) where T : class
         {
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (updateEntity != null && funColumns != null)
@@ -69,20 +57,7 @@ namespace CXData.ORM
                 string whereStr = string.Empty;
                 if (func != null)
                 {
-                    var body = func.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, false);
-                    }
-                    else
-                    {
-                        var expression = func.Body as MethodCallExpression;
-                        if (expression != null)
-                        {
-                            whereStr = LambdaExtension.CallExpression(expression, dbparaList, AnalyType.Param, false);
-                        }
-                    }
+                    whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, false, OperandType.Left);
                 }
                 var updateColumns = LambdaExtension.GetUpdateColumns(funColumns);
                 string sql = LambdaExtension.GetUpdateSql(updateEntity, updateColumns, whereStr, dbparaList);
@@ -98,11 +73,12 @@ namespace CXData.ORM
         /// 根据条件更新数据库中对应的实体数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
         /// <param name="entity"></param>
         /// <param name="funColumns"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static bool UpdateSet<T>(this T entity, Expression<Func<T, object[]>> funColumns, Expression<Func<T, bool>> func) where T : class
+        public static bool UpdateSet<T, TKey>(this T entity, Expression<Func<T, TKey>> funColumns, Expression<Func<T, bool>> func) where T : class
         {
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (entity != null && funColumns != null)
@@ -110,20 +86,7 @@ namespace CXData.ORM
                 string whereStr = string.Empty;
                 if (func != null)
                 {
-                    var body = func.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, false);
-                    }
-                    else
-                    {
-                        var expression = func.Body as MethodCallExpression;
-                        if (expression != null)
-                        {
-                            whereStr = LambdaExtension.CallExpression(expression, dbparaList, AnalyType.Param, false);
-                        }
-                    }
+                    whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, false, OperandType.Left);
                 }
                 var updateColumns = LambdaExtension.GetUpdateColumns(funColumns);
                 string sql = LambdaExtension.GetUpdateSql(entity, updateColumns, whereStr, dbparaList);
@@ -184,45 +147,32 @@ namespace CXData.ORM
         /// 根据条件返回数据库中对应的第一个实体数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
         /// <param name="entity"></param>
         /// <param name="func"></param>
         /// <param name="funColumns"></param>
         /// <returns></returns>
-        public static T SelectFirst<T>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, object[]>> funColumns = null) where T : class, new()
+        public static T SelectFirst<T>(this T entity, Expression<Func<T, bool>> func) where T : class, new()
         {
             string saName = "";
             string whereStr = string.Empty;
             List<DbParameter> dbparaList = new List<DbParameter>();
-            DatabaseType databaseType = DbHelper.GetDatabaseType();
             if (func != null)
             {
                 saName = func.Parameters[0].Name;
-                var body = func.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, true);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
             }
             string tablename = LambdaExtension.GetTabName(entity);
             if (!string.IsNullOrEmpty(saName))
             {
                 tablename = string.Format("{0} AS {1}", tablename, saName);
             }
-            string strColumns = LambdaExtension.GetColumns(funColumns, saName, ref dbparaList);
-            string sql = string.Format("SELECT {0} {1} FROM {2}", databaseType == DatabaseType.SqlServer ? "TOP 1" : "", strColumns, tablename);
+            string strColumns = "*";
             if (!string.IsNullOrEmpty(whereStr))
             {
-                sql = sql + " WHERE " + whereStr;
+                whereStr = " WHERE " + whereStr;
             }
-            if (databaseType != DatabaseType.SqlServer)
-            {
-                sql += " LIMIT 1";
-            }
+            string sql = DbHelper.GetSelectLimitSql(tablename, strColumns, whereStr, "", 1);
             DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
             if (ds != null && ds.Tables.Count > 0)
             {
@@ -230,6 +180,57 @@ namespace CXData.ORM
             }
             return default(T);
         }
+
+        ///// <summary>
+        ///// 根据条件返回数据库中对应的第一个实体数据
+        ///// </summary>
+        ///// <typeparam name="T"></typeparam>
+        ///// <typeparam name="TKey"></typeparam>
+        ///// <param name="entity"></param>
+        ///// <param name="func"></param>
+        ///// <param name="funColumns"></param>
+        ///// <returns></returns>
+        //public static T SelectFirst<T, TKey>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, TKey>> funColumns) where T : class, new()
+        //{
+        //    string saName = "";
+        //    string whereStr = string.Empty;
+        //    List<DbParameter> dbparaList = new List<DbParameter>();
+        //    if (func != null)
+        //    {
+        //        saName = func.Parameters[0].Name;
+        //        var body = func.Body as BinaryExpression;
+        //        if (body != null)
+        //        {
+        //            BinaryExpression be = body;
+        //            whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
+        //        }
+        //        else if (func.Body is MethodCallExpression)
+        //        {
+        //            whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, true);
+        //        }
+        //    }
+        //    string tablename = LambdaExtension.GetTabName(entity);
+        //    if (!string.IsNullOrEmpty(saName))
+        //    {
+        //        tablename = string.Format("{0} AS {1}", tablename, saName);
+        //    }
+        //    string strColumns = LambdaExtension.GetColumns(funColumns, saName, ref dbparaList);
+        //    string sql = string.Format("SELECT {0} {1} FROM {2}", databaseType == DatabaseType.SqlServer ? "TOP 1" : "", strColumns, tablename);
+        //    if (!string.IsNullOrEmpty(whereStr))
+        //    {
+        //        sql = sql + " WHERE " + whereStr;
+        //    }
+        //    if (databaseType != DatabaseType.SqlServer)
+        //    {
+        //        sql += " LIMIT 1";
+        //    }
+        //    DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
+        //    if (ds != null && ds.Tables.Count > 0)
+        //    {
+        //        return ds.Tables[0].ToEntity<T>();
+        //    }
+        //    return default(T);
+        //}
 
         /// <summary>
         /// 根据条件返回数据库中对应的第一个实体数据
@@ -247,20 +248,10 @@ namespace CXData.ORM
             string saName = "";
             string whereStr = string.Empty;
             List<DbParameter> dbparaList = new List<DbParameter>();
-            DatabaseType databaseType = DbHelper.GetDatabaseType();
             if (func != null)
             {
                 saName = func.Parameters[0].Name;
-                var body = func.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, true);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
             }
             string tablename = LambdaExtension.GetTabName(entity);
             if (!string.IsNullOrEmpty(saName))
@@ -277,52 +268,13 @@ namespace CXData.ORM
             }
             else
             {
-                var iniexp = resultSelector.Body as MemberInitExpression;
-                if (iniexp != null)
-                {
-                    MemberInitExpression memIniexp = iniexp;
-                    foreach (var item in memIniexp.Bindings)
-                    {
-                        MemberAssignment memaig = item as MemberAssignment;
-                        if (memaig != null)
-                        {
-                            var constantExpression = memaig.Expression as ConstantExpression;
-                            if (constantExpression != null)
-                            {
-                                ConstantExpression ce = constantExpression;
-                                if (ce.Value == null)
-                                {
-                                    columnStr += "NULL";
-                                }
-                                else if (ce.Value is ValueType)
-                                {
-                                    columnStr += string.Format("{0}", ce.Value);
-                                }
-                                else
-                                {
-                                    columnStr += string.Format("'{0}'", ce.Value);
-                                }
-                            }
-                            else
-                            {
-                                columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                            }
-                            columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                            columnStr += ",";
-                        }
-                    }
-                    columnStr = columnStr.TrimEnd(',');
-                }
+                columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
             }
-            string sql = string.Format("SELECT {0} {1} FROM {2}", databaseType == DatabaseType.SqlServer ? "TOP 1" : "", columnStr, tablename);
             if (!string.IsNullOrEmpty(whereStr))
             {
-                sql = sql + " WHERE " + whereStr;
+                whereStr = " WHERE " + whereStr;
             }
-            if (databaseType != DatabaseType.SqlServer)
-            {
-                sql += " LIMIT 1";
-            }
+            string sql = DbHelper.GetSelectLimitSql(tablename, columnStr, whereStr, "", 1);
             DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
             if (ds != null && ds.Tables.Count > 0)
             {
@@ -358,7 +310,7 @@ namespace CXData.ORM
                 {
                     foreach (var argu in expkey.Arguments)
                     {
-                        string groupkey = LambdaExtension.ExpressionRouter(argu, dbparaList, AnalyType.Column, true, OperandType.Left);
+                        string groupkey = argu.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                         if (!string.IsNullOrEmpty(groupkey))
                         {
                             keystr += groupkey;
@@ -369,45 +321,14 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    keystr = LambdaExtension.ExpressionRouter(keySelector.Body, dbparaList, AnalyType.Column, true, OperandType.Left);
+                    keystr = keySelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (resultSelector != null)
                 {
                     var iniexp = resultSelector.Body as MemberInitExpression;
                     if (iniexp != null)
                     {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else if (ce.Value is string || ce.Value is DateTime || ce.Value is char || ce.Value is Guid)
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, dbparaList, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
+                        columnStr = iniexp.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                     }
                 }
                 else
@@ -416,34 +337,15 @@ namespace CXData.ORM
                 }
                 if (whereFunc != null)
                 {
-                    var body = whereFunc.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereFunc.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereFunc.Body, dbparaList, AnalyType.Param, true);
-                    }
+                    whereStr = whereFunc.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+                }
+                if (!string.IsNullOrEmpty(keystr) && !string.IsNullOrEmpty(tablename))
+                {
                     if (!string.IsNullOrEmpty(whereStr))
                     {
                         whereStr = string.Format(" WHERE {0}", whereStr);
                     }
-                }
-                if (!string.IsNullOrEmpty(keystr) && !string.IsNullOrEmpty(tablename))
-                {
-                    string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
-                    switch (databaseType)
-                    {
-                        case DatabaseType.SqlServer:
-                            sql = string.Format("SELECT TOP 1 {0} FROM {1} {2} GROUP BY {3};", columnStr, tablename, whereStr, keystr);
-                            break;
-                        case DatabaseType.MySql:
-                            sql = string.Format("SELECT {0} FROM {1} {2} GROUP BY {3} LIMIT 1;", columnStr, tablename, whereStr, keystr);
-                            break;
-                    }
+                    string sql = DbHelper.GetGroupLimitSql(tablename, columnStr, whereStr, keystr, "", 1);
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (ds != null && ds.Tables.Count > 0)
                     {
@@ -481,7 +383,7 @@ namespace CXData.ORM
                 {
                     foreach (var argu in expkey.Arguments)
                     {
-                        string groupkey = LambdaExtension.ExpressionRouter(argu, dbparaList, AnalyType.Column, true, OperandType.Left);
+                        string groupkey = argu.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                         if (!string.IsNullOrEmpty(groupkey))
                         {
                             keystr += groupkey;
@@ -492,46 +394,11 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    keystr = LambdaExtension.ExpressionRouter(keySelector.Body, dbparaList, AnalyType.Column, true, OperandType.Left);
+                    keystr = keySelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (resultSelector != null)
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else if (ce.Value is string || ce.Value is DateTime || ce.Value is char || ce.Value is Guid)
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, dbparaList, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 else
                 {
@@ -539,25 +406,14 @@ namespace CXData.ORM
                 }
                 if (whereFunc != null)
                 {
-                    var body = whereFunc.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList,
-                            AnalyType.Param, true);
-                    }
-                    else if (whereFunc.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereFunc.Body, dbparaList,
-                            AnalyType.Param, true);
-                    }
+                    whereStr = whereFunc.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+                }
+                if (!string.IsNullOrEmpty(keystr) && !string.IsNullOrEmpty(tablename))
+                {
                     if (!string.IsNullOrEmpty(whereStr))
                     {
                         whereStr = string.Format(" WHERE {0}", whereStr);
                     }
-                }
-                if (!string.IsNullOrEmpty(keystr) && !string.IsNullOrEmpty(tablename))
-                {
                     string sql = string.Format("SELECT {0} FROM {1} {2} GROUP BY {3}", columnStr, tablename, whereStr, keystr);
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (ds != null && ds.Tables.Count > 0)
@@ -616,40 +472,17 @@ namespace CXData.ORM
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (func != null)
             {
-                var expression = func.Body as BinaryExpression;
-                if (expression != null)
-                {
-                    BinaryExpression be = expression;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, false);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, false);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, false, OperandType.Left);
             }
             if (funOrder != null)
             {
-                var body = funOrder.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null, AnalyType.Order, false);
-                }
-                else if (funOrder.Body is MethodCallExpression)
-                {
-                    orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, false);
-                }
+                orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, false, OperandType.Left);
             }
             if (!string.IsNullOrEmpty(whereStr))
             {
                 whereStr = string.Format(" WHERE {0}", whereStr);
             }
-            DatabaseType databaseType = DbHelper.GetDatabaseType();
-            string sql = string.Format("SELECT {0} * FROM {1} {2} {3}", rowNum > 0 && databaseType == DatabaseType.SqlServer ? string.Format("TOP {0} ", rowNum) : "", tableName, whereStr, orderBystr);
-            if (rowNum > 0 && databaseType != DatabaseType.SqlServer)
-            {
-                sql += string.Format(" LIMIT {0}", rowNum);
-            }
+            string sql = DbHelper.GetSelectLimitSql(tableName, "*", whereStr, orderBystr, rowNum);
             DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
             if (ds != null && ds.Tables.Count > 0)
             {
@@ -679,29 +512,11 @@ namespace CXData.ORM
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (func != null)
             {
-                var expression = func.Body as BinaryExpression;
-                if (expression != null)
-                {
-                    BinaryExpression be = expression;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, false);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, false);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, false, OperandType.Left);
             }
             if (funOrder != null)
             {
-                var body = funOrder.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null, AnalyType.Order, false);
-                }
-                else if (funOrder.Body is MethodCallExpression)
-                {
-                    orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, false);
-                }
+                orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, false, OperandType.Left);
             }
             string columnStr = "";
             var expressionResult = resultSelector.Body as ParameterExpression;
@@ -711,53 +526,13 @@ namespace CXData.ORM
             }
             else
             {
-                var iniexp = resultSelector.Body as MemberInitExpression;
-                if (iniexp != null)
-                {
-                    MemberInitExpression memIniexp = iniexp;
-                    foreach (var item in memIniexp.Bindings)
-                    {
-                        MemberAssignment memaig = item as MemberAssignment;
-                        if (memaig != null)
-                        {
-                            var constantExpression = memaig.Expression as ConstantExpression;
-                            if (constantExpression != null)
-                            {
-                                ConstantExpression ce = constantExpression;
-                                if (ce.Value == null)
-                                {
-                                    columnStr += "NULL";
-                                }
-                                else if (ce.Value is ValueType)
-                                {
-                                    columnStr += string.Format("{0}", ce.Value);
-                                }
-                                else
-                                {
-                                    columnStr += string.Format("'{0}'", ce.Value);
-                                }
-                            }
-                            else
-                            {
-                                columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, false, OperandType.Left);
-                            }
-                            columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                            columnStr += ",";
-                        }
-                    }
-                    columnStr = columnStr.TrimEnd(',');
-                }
+                columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, false, OperandType.Left);
             }
             if (!string.IsNullOrEmpty(whereStr))
             {
                 whereStr = string.Format(" WHERE {0}", whereStr);
             }
-            DatabaseType databaseType = DbHelper.GetDatabaseType();
-            string sql = string.Format("SELECT {0} {1} FROM {2} {3} {4}", rowNum > 0 && databaseType == DatabaseType.SqlServer ? string.Format("TOP {0} ", rowNum) : "", columnStr, tableName, whereStr, orderBystr);
-            if (rowNum > 0 && databaseType != DatabaseType.SqlServer)
-            {
-                sql += string.Format(" LIMIT {0}", rowNum);
-            }
+            string sql = DbHelper.GetSelectLimitSql(tableName, columnStr, whereStr, orderBystr, rowNum);
             DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
             if (ds != null && ds.Tables.Count > 0)
             {
@@ -770,6 +545,7 @@ namespace CXData.ORM
         /// 根据条件返回数据库中对应的实体列表数据
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
         /// <param name="entity"></param>
         /// <param name="func"></param>
         /// <param name="funOrder"></param>
@@ -778,9 +554,9 @@ namespace CXData.ORM
         /// <param name="totalRecord"></param>
         /// <param name="funColumns"></param>
         /// <returns></returns>
-        public static List<T> SelectList<T>(this T entity, Expression<Func<T, bool>> func,
+        public static List<T> SelectList<T, TKey>(this T entity, Expression<Func<T, bool>> func,
             Expression<Func<T, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord,
-            Expression<Func<T, object[]>> funColumns = null)
+            Expression<Func<T, TKey>> funColumns = null)
             where T : class, new()
         {
             string whereStr = string.Empty;
@@ -791,70 +567,38 @@ namespace CXData.ORM
             if (func != null)
             {
                 saName = func.Parameters[0].Name;
-                var expression = func.Body as BinaryExpression;
-                if (expression != null)
-                {
-                    BinaryExpression be = expression;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, false);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, false);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
             }
             if (funOrder != null)
             {
-                var body = funOrder.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null,
-                        AnalyType.Order, false);
-                }
-                else if (funOrder.Body is MethodCallExpression)
-                {
-                    orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order,
-                        false);
-                }
+                orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, true, OperandType.Left);
             }
             if (!string.IsNullOrEmpty(whereStr))
             {
                 whereStr = string.Format(" WHERE {0}", whereStr);
             }
             string sql = "";
-            string strColumns = LambdaExtension.GetColumns(funColumns, saName, ref dbparaList);
-            DatabaseType databaseType = DbHelper.GetDatabaseType();
+            //string columnStr = LambdaExtension.GetColumns(funColumns, saName, ref dbparaList);
+            string columnStr = "";
+            var expressionResult = funColumns.Body as ParameterExpression;
+            if (expressionResult != null)
+            {
+                columnStr += "*";
+            }
+            else
+            {
+                columnStr = funColumns.Body.ExpressionRouter(dbparaList, AnalyType.Column, false, OperandType.Left);
+            }
             if (pageSize > 0)
             {
                 sql = string.Format("SELECT @TotalRecord = COUNT(1) FROM {0} {1};", tableName, whereStr);
                 DbParameter param = DbHelper.CreateOutDbParameter("@TotalRecord", DbType.Int32);
                 dbparaList.Add(param);
-                switch (databaseType)
-                {
-                    case DatabaseType.SqlServer:
-                        sql +=
-                            string.Format(
-                                "SELECT * FROM (SELECT ROW_NUMBER() OVER ({0}) AS ROWID ,{1} FROM {2} {3} ) AS T WHERE ROWID BETWEEN {4} AND {5} ",
-                                orderBystr, strColumns, tableName, whereStr, (pageIndex - 1) * pageSize + 1,
-                                pageIndex * pageSize);
-                        break;
-                    case DatabaseType.MySql:
-                        sql += string.Format("SELECT {0} FROM {1} {2} {3} LIMIT {4},{5} ",
-                            strColumns, tableName, whereStr, orderBystr, (pageIndex - 1) * pageSize, pageSize);
-                        break;
-                }
+                sql += DbHelper.GetPageSql(tableName, columnStr, whereStr, orderBystr, pageSize, pageIndex);
             }
             else
             {
-                switch (databaseType)
-                {
-                    case DatabaseType.SqlServer:
-                        sql += string.Format("SELECT {0} FROM {1} {2} {3}", strColumns, tableName, whereStr, orderBystr);
-                        break;
-                    case DatabaseType.MySql:
-                        sql += string.Format("SELECT {0} FROM {1} {2} {3}", strColumns, tableName, whereStr, orderBystr);
-                        break;
-                }
+                sql += string.Format("SELECT {0} FROM {1} {2} {3}", columnStr, tableName, whereStr, orderBystr);
             }
             DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
             if (pageSize > 0)
@@ -896,31 +640,11 @@ namespace CXData.ORM
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (func != null)
             {
-                var expression = func.Body as BinaryExpression;
-                if (expression != null)
-                {
-                    BinaryExpression be = expression;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, false);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param, false);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, false, OperandType.Left);
             }
             if (funOrder != null)
             {
-                var body = funOrder.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null,
-                        AnalyType.Order, false);
-                }
-                else if (funOrder.Body is MethodCallExpression)
-                {
-                    orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order,
-                        false);
-                }
+                orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, false, OperandType.Left);
             }
             if (!string.IsNullOrEmpty(whereStr))
             {
@@ -937,75 +661,18 @@ namespace CXData.ORM
             }
             else
             {
-                var iniexp = resultSelector.Body as MemberInitExpression;
-                if (iniexp != null)
-                {
-                    MemberInitExpression memIniexp = iniexp;
-                    foreach (var item in memIniexp.Bindings)
-                    {
-                        MemberAssignment memaig = item as MemberAssignment;
-                        if (memaig != null)
-                        {
-                            var constantExpression = memaig.Expression as ConstantExpression;
-                            if (constantExpression != null)
-                            {
-                                ConstantExpression ce = constantExpression;
-                                if (ce.Value == null)
-                                {
-                                    columnStr += "NULL";
-                                }
-                                else if (ce.Value is ValueType)
-                                {
-                                    columnStr += string.Format("{0}", ce.Value);
-                                }
-                                else
-                                {
-                                    columnStr += string.Format("'{0}'", ce.Value);
-                                }
-                            }
-                            else
-                            {
-                                columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                            }
-                            columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                            columnStr += ",";
-                        }
-                    }
-                    columnStr = columnStr.TrimEnd(',');
-                }
+                columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
             }
-            DatabaseType databaseType = DbHelper.GetDatabaseType();
             if (pageSize > 0)
             {
                 sql = string.Format("SELECT @TotalRecord = COUNT(1) FROM {0} {1};", tableName, whereStr);
                 DbParameter param = DbHelper.CreateOutDbParameter("@TotalRecord", DbType.Int32);
                 dbparaList.Add(param);
-                switch (databaseType)
-                {
-                    case DatabaseType.SqlServer:
-                        sql +=
-                            string.Format(
-                                "SELECT * FROM (SELECT ROW_NUMBER() OVER ({0}) AS ROWID ,{1} FROM {2} {3} ) AS T WHERE ROWID BETWEEN {4} AND {5} ",
-                                orderBystr, columnStr, tableName, whereStr, (pageIndex - 1) * pageSize + 1,
-                                pageIndex * pageSize);
-                        break;
-                    case DatabaseType.MySql:
-                        sql += string.Format("SELECT {0} FROM {1} {2} {3} LIMIT {4},{5} ",
-                            columnStr, tableName, whereStr, orderBystr, (pageIndex - 1) * pageSize, pageSize);
-                        break;
-                }
+                sql += DbHelper.GetPageSql(tableName, columnStr, whereStr, orderBystr, pageSize, pageIndex);
             }
             else
             {
-                switch (databaseType)
-                {
-                    case DatabaseType.SqlServer:
-                        sql += string.Format("SELECT {0} FROM {1} {2} {3}", columnStr, tableName, whereStr, orderBystr);
-                        break;
-                    case DatabaseType.MySql:
-                        sql += string.Format("SELECT {0} FROM {1} {2} {3}", columnStr, tableName, whereStr, orderBystr);
-                        break;
-                }
+                sql += string.Format("SELECT {0} FROM {1} {2} {3}", columnStr, tableName, whereStr, orderBystr);
             }
             DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
             if (pageSize > 0)
@@ -1048,13 +715,13 @@ namespace CXData.ORM
             string tablenameA = LambdaExtension.GetTabName(outer);
             string tablenameB = LambdaExtension.GetTabName(inner);
             List<DbParameter> dbparaList = new List<DbParameter>();
-            string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+            string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
             if (!string.IsNullOrEmpty(keystrA))
             {
                 tablenameA += " AS ";
                 tablenameA += outerKeySelector.Parameters[0].Name;
             }
-            string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+            string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
             if (!string.IsNullOrEmpty(keystrB))
             {
                 tablenameB += " AS ";
@@ -1066,39 +733,15 @@ namespace CXData.ORM
             string columnStr = GetGroupColumnStr(resultSelector, dbparaList, groupColumnDit, groupkeystr);
             if (whereSelector != null)
             {
-                var body = whereSelector.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                }
-                else if (whereSelector.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(whereSelector.Body, dbparaList, AnalyType.Param, true);
-                }
+                whereStr = whereSelector.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+            }
+            if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
+            {
                 if (!string.IsNullOrEmpty(whereStr))
                 {
                     whereStr = string.Format(" WHERE {0}", whereStr);
                 }
-
-            }
-            if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
-            {
-                string sql = "";
-                DatabaseType databaseType = DbHelper.GetDatabaseType();
-                switch (databaseType)
-                {
-                    case DatabaseType.SqlServer:
-                        sql = string.Format("SELECT TOP 1 {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} GROUP BY {7};",
-                            columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr,
-                            groupkeystr);
-                        break;
-                    case DatabaseType.MySql:
-                        sql = string.Format("SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} GROUP BY {7} LIMIT 1;",
-                            columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr,
-                            groupkeystr);
-                        break;
-                }
+                string sql = DbHelper.GetJoinGroupLimitSql(tablenameA, tablenameB, keystrA, keystrB, joinType.ToString().ToUpper(), columnStr, whereStr, groupkeystr, "", 1);
                 DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                 if (ds != null && ds.Tables.Count > 0)
                 {
@@ -1122,34 +765,9 @@ namespace CXData.ORM
                     Dictionary<string, string> groupColumnDit) where TOuter : class, new() where TInner : class, new()
         {
             string groupkeystr = "";
-            NewExpression expkey = groupkeyFunc.Body as NewExpression;
-            if (expkey != null)
+            if (groupkeyFunc != null)
             {
-                for (int i = 0; i < expkey.Members.Count; i++)
-                {
-                    string groupkey = expkey.Members[i].Name;
-                    var argu = expkey.Arguments[i];
-                    string val = LambdaExtension.ExpressionRouter(argu, dbparaList, AnalyType.Column, true, OperandType.Left);
-                    if (!string.IsNullOrEmpty(groupkey) && !string.IsNullOrEmpty(val))
-                    {
-                        if (!string.IsNullOrEmpty(groupkeystr))
-                        {
-                            groupkeystr += ",";
-                        }
-                        groupkeystr += val;
-                        groupColumnDit.Add(groupkey, val);
-                    }
-                }
-            }
-            else
-            {
-                groupkeystr = LambdaExtension.ExpressionRouter(groupkeyFunc.Body, dbparaList, AnalyType.Column, true, OperandType.Left);
-                groupkeystr += groupkeystr;
-                string[] groupkeyArray = groupkeystr.Split('.');
-                if (!groupColumnDit.ContainsKey(groupkeyArray[1]))
-                {
-                    groupColumnDit.Add(groupkeyArray[1], groupkeyArray[0]);
-                }
+                groupkeystr = groupkeyFunc.Body.ExpressionRouter(dbparaList, AnalyType.Group, true, OperandType.Left, groupColumnDit);
             }
             return groupkeystr;
         }
@@ -1167,86 +785,11 @@ namespace CXData.ORM
         private static string GetGroupColumnStr<TGroup, TResult>(Expression<Func<TGroup, TResult>> resultSelector,
              List<DbParameter> dbparaList, Dictionary<string, string> groupColumnDit, string groupkeystr) where TResult : class, new()
         {
-            string columnStr = string.Empty;
+            string columnStr;
             if (resultSelector != null)
             {
-                var iniexp = resultSelector.Body as MemberInitExpression;
-                if (iniexp != null)
-                {
-                    MemberInitExpression memIniexp = iniexp;
-                    foreach (var item in memIniexp.Bindings)
-                    {
-                        string strcolumn = "";
-                        MemberAssignment memaig = item as MemberAssignment;
-                        if (memaig != null)
-                        {
-                            if (!string.IsNullOrEmpty(columnStr))
-                            {
-                                columnStr += ",";
-                            }
-                            var constantExpression = memaig.Expression as ConstantExpression;
-                            if (constantExpression != null)
-                            {
-                                ConstantExpression ce = constantExpression;
-                                if (ce.Value == null)
-                                {
-                                    strcolumn = "NULL";
-                                }
-                                else if (ce.Value is ValueType)
-                                {
-                                    strcolumn = string.Format("{0}", ce.Value);
-                                }
-                                else
-                                {
-                                    strcolumn = string.Format("'{0}'", ce.Value);
-                                }
-                            }
-                            else
-                            {
-                                string xcolumn = LambdaExtension.ExpressionRouter(memaig.Expression, dbparaList,
-                                    AnalyType.Column, false, OperandType.Left);
-                                switch (memaig.Expression.NodeType)
-                                {
-                                    case ExpressionType.Call:
-                                        MethodCallExpression mce = memaig.Expression as MethodCallExpression;
-                                        if (mce != null)
-                                        {
-                                            strcolumn = LambdaExtension.ExpressionRouter(mce.Arguments[0], dbparaList, AnalyType.Column, false, OperandType.Left);
-                                            strcolumn = xcolumn.Replace(strcolumn, groupColumnDit[strcolumn]);
-                                        }
-                                        break;
-                                    case ExpressionType.Convert:
-                                    case ExpressionType.ConvertChecked:
-                                        var convertExpression = memaig.Expression as UnaryExpression;
-                                        if (convertExpression != null &&
-                                            convertExpression.Operand.NodeType == ExpressionType.Call)
-                                        {
-                                            string[] methodArray = { "ROWCOUNT", "LEN" };
-                                            var callExpression = convertExpression.Operand as MethodCallExpression;
-                                            if (callExpression != null && methodArray.Any(x => x == callExpression.Method.Name.ToUpper()))
-                                            {
-                                                strcolumn = LambdaExtension.ExpressionRouter(callExpression.Arguments[0], dbparaList, AnalyType.Column, false, OperandType.Left);
-                                                strcolumn = xcolumn.Replace(strcolumn, groupColumnDit[strcolumn]);
-                                            }
-                                            else
-                                            {
-                                                strcolumn = groupColumnDit[xcolumn];
-                                            }
-                                        }
-                                        break;
-                                    default:
-                                        strcolumn = groupColumnDit[xcolumn];
-                                        break;
-                                }
-                            }
-                            if (!string.IsNullOrEmpty(strcolumn))
-                            {
-                                columnStr += strcolumn;
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                            }
-                        }
-                    }
-                }
+                columnStr = resultSelector.Body.ExpressionRouter(dbparaList,
+                                    AnalyType.Column, false, OperandType.Left, groupColumnDit);
             }
             else
             {
@@ -1276,7 +819,7 @@ namespace CXData.ORM
         /// <param name="pageIndex"></param>
         /// <param name="totalRecord"></param>
         /// <returns></returns>
-        public static List<TResult> JoinGroupByList<TOuter, TInner, TKey, TGroup, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TGroup>> groupkeyFunc, Expression<Func<TGroup, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector, Expression<Func<TOuter, TInner, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
+        public static List<TResult> JoinGroupByList<TOuter, TInner, TKey, TGroup, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TGroup>> groupkeyFunc, Expression<Func<TGroup, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector, Expression<Func<TGroup, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
             where TOuter : class, new()
             where TInner : class, new()
             where TResult : class, new()
@@ -1287,14 +830,14 @@ namespace CXData.ORM
                 string tablenameB = LambdaExtension.GetTabName(inner);
                 string orderBystr = string.Empty;
                 List<DbParameter> dbparaList = new List<DbParameter>();
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true,
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true,
                     OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true,
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true,
                     OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
@@ -1307,85 +850,34 @@ namespace CXData.ORM
                 string whereStr = string.Empty;
                 if (whereSelector != null)
                 {
-                    var body = whereSelector.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList,
-                            AnalyType.Param, true);
-                    }
-                    else if (whereSelector.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereSelector.Body, dbparaList,
-                            AnalyType.Param, true);
-                    }
+                    whereStr = whereSelector.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+                }
+                if (funOrder != null)
+                {
+                    orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, true, OperandType.Left, groupColumnDit);
+                }
+                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
+                {
                     if (!string.IsNullOrEmpty(whereStr))
                     {
                         whereStr = string.Format(" WHERE {0}", whereStr);
                     }
-                }
-                if (funOrder != null)
-                {
-                    var fbody = funOrder.Body as BinaryExpression;
-                    if (fbody != null)
-                    {
-                        BinaryExpression be = fbody;
-                        orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null,
-                            AnalyType.Order, true);
-                    }
-                    else if (funOrder.Body is MethodCallExpression)
-                    {
-                        orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, true);
-                    }
-                }
-                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
-                {
                     string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
                     if (pageSize > 0)
                     {
                         sql = string.Format("SELECT @TotalRecord = COUNT(1) FROM  {0} {1} JOIN {2} ON {3}={4} {5};",
                             tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr);
                         DbParameter param = DbHelper.CreateOutDbParameter("@TotalRecord", DbType.Int32);
                         dbparaList.Add(param);
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql +=
-                                    string.Format(
-                                        "SELECT * FROM (SELECT ROW_NUMBER() OVER ({0}) AS ROWID ,{1} FROM {2} {3} JOIN {4} ON {5}={6} {7} GROUP BY {8})AS T WHERE ROWID BETWEEN {9} AND {10} ",
-                                        orderBystr, columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB,
-                                        keystrA, keystrB, whereStr,
-                                        groupkeystr, (pageIndex - 1) * pageSize + 1, pageIndex * pageSize);
-                                break;
-                            case DatabaseType.MySql:
-                                sql +=
-                                    string.Format(
-                                        "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6}  GROUP BY {7} {8} LIMIT {9},{10} ",
-                                        columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA,
-                                        keystrB, whereStr, groupkeystr,
-                                        orderBystr, (pageIndex - 1) * pageSize, pageSize);
-                                break;
-                        }
+                        sql += DbHelper.GetJoinGroupPageSql(tablenameA, tablenameB, keystrA, keystrB,
+                            joinType.ToString().ToUpper(), columnStr, whereStr, groupkeystr, orderBystr, pageSize,
+                            pageIndex);
                     }
                     else
                     {
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql +=
-                                    string.Format("SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} GROUP BY {7} {8}",
-                                        columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB,
-                                        keystrA, keystrB, whereStr, groupkeystr, orderBystr);
-                                break;
-                            case DatabaseType.MySql:
-                                sql +=
-                                    string.Format(
-                                        "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6}  GROUP BY {7} {8} ",
-                                        columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA,
-                                        keystrB, whereStr, groupkeystr, orderBystr);
-                                break;
-                        }
+                        sql += string.Format("SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} GROUP BY {7} {8}",
+                                columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB,
+                                keystrA, keystrB, whereStr, groupkeystr, orderBystr);
                     }
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (pageSize > 0)
@@ -1436,13 +928,13 @@ namespace CXData.ORM
                 string tablenameB = LambdaExtension.GetTabName(inner);
                 string columnStr = string.Empty;
                 string whereStr = string.Empty;
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true,
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true,
                     OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
@@ -1458,75 +950,20 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (whereFunc != null)
                 {
-                    var body = whereFunc.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereFunc.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereFunc.Body, dbparaList, AnalyType.Param, true);
-                    }
+                    whereStr = whereFunc.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+                }
+                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
+                {
                     if (!string.IsNullOrEmpty(whereStr))
                     {
                         whereStr = string.Format(" WHERE {0}", whereStr);
                     }
-                }
-                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
-                {
-                    string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
-                    switch (databaseType)
-                    {
-                        case DatabaseType.SqlServer:
-                            sql = string.Format("SELECT TOP 1 {0} FROM {1} {2} JOIN {3} ON {4}={5} {6};", columnStr, tablenameA,
-                                joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr);
-                            break;
-                        case DatabaseType.MySql:
-                            sql += string.Format("SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} LIMIT 1;",
-                                columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr);
-                            break;
-                    }
+                    string sql = DbHelper.GetJoinLimitSql(tablenameA, tablenameB, keystrA, keystrB, joinType.ToString().ToUpper(),
+                        columnStr, whereStr, "", 1);
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (ds != null && ds.Tables.Count > 0)
                     {
@@ -1574,20 +1011,20 @@ namespace CXData.ORM
                 string columnStr = string.Empty;
                 string orderBystr = string.Empty;
                 List<DbParameter> dbparaList = new List<DbParameter>();
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
                     tablenameB += " AS ";
                     tablenameB += innerKeySelector.Parameters[0].Name;
                 }
-                string keystrB1 = LambdaExtension.ExpressionRouter(innerKeySelector1.Body, null, AnalyType.Column, true, OperandType.Left);
-                string keystrC = LambdaExtension.ExpressionRouter(innerKeySelector2.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrB1 = innerKeySelector1.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
+                string keystrC = innerKeySelector2.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrC))
                 {
                     tablenameC += " AS ";
@@ -1603,97 +1040,25 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else if (ce.Value is string || ce.Value is DateTime || ce.Value is char || ce.Value is Guid)
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (whereSelector != null)
                 {
-                    var body = whereSelector.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereSelector.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereSelector.Body, dbparaList, AnalyType.Param, true);
-                    }
-                    if (!string.IsNullOrEmpty(whereStr))
-                    {
-                        whereStr = string.Format(" WHERE {0}", whereStr);
-                    }
+                    whereStr = whereSelector.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
                 }
 
                 if (funOrder != null)
                 {
-                    var fbody = funOrder.Body as BinaryExpression;
-                    if (fbody != null)
-                    {
-                        BinaryExpression be = fbody;
-                        orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null, AnalyType.Order, true);
-                    }
-                    else if (funOrder.Body is MethodCallExpression)
-                    {
-                        orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, true);
-                    }
+                    orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, true, OperandType.Left);
                 }
                 if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
                 {
-                    string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
-                    switch (databaseType)
+                    if (!string.IsNullOrEmpty(whereStr))
                     {
-                        case DatabaseType.SqlServer:
-                            sql +=
-                                string.Format(
-                                    "SELECT TOP 1 {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11};",
-                                    columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB,
-                                    keystrA, keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC,
-                                    whereStr, orderBystr);
-                            break;
-                        case DatabaseType.MySql:
-                            sql +=
-                                string.Format(
-                                    "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11} LIMIT 1;",
-                                    columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                    keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC, whereStr,
-                                    orderBystr);
-                            break;
+                        whereStr = string.Format(" WHERE {0}", whereStr);
                     }
+                    string sql = DbHelper.GetJoinLimitSql(tablenameA, tablenameB, tablenameC, keystrA, keystrB, keystrB1, keystrC, joinType1.ToString().ToUpper()
+                        , joinType2.ToString().ToUpper(), columnStr, whereStr, orderBystr, 1);
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (ds != null && ds.Tables.Count > 0)
                     {
@@ -1741,20 +1106,20 @@ namespace CXData.ORM
                 string columnStr = string.Empty;
                 string orderBystr = string.Empty;
                 List<DbParameter> dbparaList = new List<DbParameter>();
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
                     tablenameB += " AS ";
                     tablenameB += innerKeySelector.Parameters[0].Name;
                 }
-                string keystrA1 = LambdaExtension.ExpressionRouter(outerKeySelector1.Body, null, AnalyType.Column, true, OperandType.Left);
-                string keystrC = LambdaExtension.ExpressionRouter(innerKeySelector2.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA1 = outerKeySelector1.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
+                string keystrC = innerKeySelector2.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrC))
                 {
                     tablenameC += " AS ";
@@ -1770,96 +1135,24 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else if (ce.Value is string || ce.Value is DateTime || ce.Value is char || ce.Value is Guid)
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (whereSelector != null)
                 {
-                    var body = whereSelector.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereSelector.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereSelector.Body, dbparaList, AnalyType.Param, true);
-                    }
+                    whereStr = whereSelector.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+                }
+                if (funOrder != null)
+                {
+                    orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, true, OperandType.Left);
+                }
+                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
+                {
                     if (!string.IsNullOrEmpty(whereStr))
                     {
                         whereStr = string.Format(" WHERE {0}", whereStr);
                     }
-                }
-
-                if (funOrder != null)
-                {
-                    var fbody = funOrder.Body as BinaryExpression;
-                    if (fbody != null)
-                    {
-                        BinaryExpression be = fbody;
-                        orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null, AnalyType.Order, true);
-                    }
-                    else if (funOrder.Body is MethodCallExpression)
-                    {
-                        orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, true);
-                    }
-                }
-                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
-                {
-                    string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
-
-                    switch (databaseType)
-                    {
-                        case DatabaseType.SqlServer:
-                            sql += string.Format(
-                                "SELECT TOP 1 {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11};",
-                                columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC, whereStr,
-                                orderBystr);
-                            break;
-                        case DatabaseType.MySql:
-                            sql += string.Format(
-                                "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11} LIMIT 1;",
-                                columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC, whereStr,
-                                orderBystr);
-                            break;
-                    }
+                    string sql = DbHelper.GetJoinLimitSql(tablenameA, tablenameB, tablenameC, keystrA, keystrB, keystrA1, keystrC, joinType1.ToString().ToUpper()
+                        , joinType2.ToString().ToUpper(), columnStr, whereStr, orderBystr, 1);
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (ds != null && ds.Tables.Count > 0)
                     {
@@ -1897,13 +1190,13 @@ namespace CXData.ORM
                 string tablenameB = LambdaExtension.GetTabName(inner);
                 string columnStr = string.Empty;
                 string whereStr = string.Empty;
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true,
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true,
                     OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
@@ -1920,62 +1213,19 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (whereFunc != null)
                 {
-                    var body = whereFunc.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereFunc.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereFunc.Body, dbparaList, AnalyType.Param, true);
-                    }
+                    whereStr = whereFunc.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+
+                }
+                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
+                {
                     if (!string.IsNullOrEmpty(whereStr))
                     {
                         whereStr = string.Format(" WHERE {0}", whereStr);
                     }
-                }
-                if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
-                {
                     string sql = string.Format("SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6}", columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr);
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (ds != null && ds.Tables.Count > 0)
@@ -2018,14 +1268,14 @@ namespace CXData.ORM
                 string columnStr = string.Empty;
                 string orderBystr = string.Empty;
                 List<DbParameter> dbparaList = new List<DbParameter>();
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true,
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true,
                     OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true,
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true,
                     OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
@@ -2042,117 +1292,39 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else if (ce.Value is string || ce.Value is DateTime || ce.Value is char || ce.Value is Guid)
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (whereSelector != null)
                 {
-                    var body = whereSelector.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereSelector.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereSelector.Body, dbparaList, AnalyType.Param, true);
-                    }
-                    if (!string.IsNullOrEmpty(whereStr))
-                    {
-                        whereStr = string.Format(" WHERE {0}", whereStr);
-                    }
+                    whereStr = whereSelector.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
                 }
 
                 if (funOrder != null)
                 {
-                    var fbody = funOrder.Body as BinaryExpression;
-                    if (fbody != null)
-                    {
-                        BinaryExpression be = fbody;
-                        orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null, AnalyType.Order, true);
-                    }
-                    else if (funOrder.Body is MethodCallExpression)
-                    {
-                        orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, true);
-                    }
+                    orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, true, OperandType.Left);
                 }
                 if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
                 {
+                    if (!string.IsNullOrEmpty(whereStr))
+                    {
+                        whereStr = string.Format(" WHERE {0}", whereStr);
+                    }
                     string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
                     if (pageSize > 0)
                     {
                         sql = string.Format("SELECT @TotalRecord = COUNT(1) FROM  {0} {1} JOIN {2} ON {3}={4} {5};",
                             tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr);
                         DbParameter param = DbHelper.CreateOutDbParameter("@TotalRecord", DbType.Int32);
                         dbparaList.Add(param);
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql +=
-                                    string.Format(
-                                        "SELECT * FROM (SELECT ROW_NUMBER() OVER ({0}) AS ROWID ,{1} FROM {2} {3} JOIN {4} ON {5}={6} {7})AS T WHERE ROWID BETWEEN {8} AND {9} ",
-                                        orderBystr, columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB,
-                                        keystrA, keystrB, whereStr, (pageIndex - 1) * pageSize + 1, pageIndex * pageSize);
-                                break;
-                            case DatabaseType.MySql:
-                                sql += string.Format("SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} {7} LIMIT {8},{9} ",
-                                    columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB, keystrA, keystrB, whereStr, orderBystr,
-                                    (pageIndex - 1) * pageSize, pageSize);
-                                break;
-                        }
+                        sql += DbHelper.GetJoinPageSql(tablenameA, tablenameB, keystrA, keystrB,
+                            joinType.ToString().ToUpper(), columnStr, whereStr, orderBystr, pageSize, pageIndex);
                     }
                     else
                     {
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql += string.Format(
-                                        "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} {7}",
-                                        columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB,
-                                        keystrA, keystrB, whereStr, orderBystr);
-                                break;
-                            case DatabaseType.MySql:
-                                sql += string.Format(
-                                        "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} {7}",
-                                        columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB,
-                                        keystrA, keystrB, whereStr, orderBystr);
-                                break;
-                        }
+                        sql += string.Format(
+                                "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} {7}",
+                                columnStr, tablenameA, joinType.ToString().ToUpper(), tablenameB,
+                                keystrA, keystrB, whereStr, orderBystr);
                     }
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (pageSize > 0)
@@ -2213,20 +1385,20 @@ namespace CXData.ORM
                 string columnStr = string.Empty;
                 string orderBystr = string.Empty;
                 List<DbParameter> dbparaList = new List<DbParameter>();
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
                     tablenameB += " AS ";
                     tablenameB += innerKeySelector.Parameters[0].Name;
                 }
-                string keystrB1 = LambdaExtension.ExpressionRouter(innerKeySelector1.Body, null, AnalyType.Column, true, OperandType.Left);
-                string keystrC = LambdaExtension.ExpressionRouter(innerKeySelector2.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrB1 = innerKeySelector1.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
+                string keystrC = innerKeySelector2.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrC))
                 {
                     tablenameC += " AS ";
@@ -2242,78 +1414,24 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else if (ce.Value is string || ce.Value is DateTime || ce.Value is char || ce.Value is Guid)
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (whereSelector != null)
                 {
-                    var body = whereSelector.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereSelector.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereSelector.Body, dbparaList, AnalyType.Param, true);
-                    }
-                    if (!string.IsNullOrEmpty(whereStr))
-                    {
-                        whereStr = string.Format(" WHERE {0}", whereStr);
-                    }
+                    whereStr = whereSelector.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
                 }
 
                 if (funOrder != null)
                 {
-                    var fbody = funOrder.Body as BinaryExpression;
-                    if (fbody != null)
-                    {
-                        BinaryExpression be = fbody;
-                        orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null, AnalyType.Order, true);
-                    }
-                    else if (funOrder.Body is MethodCallExpression)
-                    {
-                        orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, true);
-                    }
+                    orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, true, OperandType.Left);
                 }
                 if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
                 {
+                    if (!string.IsNullOrEmpty(whereStr))
+                    {
+                        whereStr = string.Format(" WHERE {0}", whereStr);
+                    }
                     string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
                     if (pageSize > 0)
                     {
                         sql =
@@ -2323,47 +1441,17 @@ namespace CXData.ORM
                                 joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC, whereStr);
                         DbParameter param = DbHelper.CreateOutDbParameter("@TotalRecord", DbType.Int32);
                         dbparaList.Add(param);
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql +=
-                                    string.Format(
-                                        "SELECT * FROM (SELECT ROW_NUMBER() OVER ({0}) AS ROWID ,{1} FROM {2} {3} JOIN {4} ON {5}={6} {7} JOIN {8} ON {9}={10} {11})AS T WHERE ROWID BETWEEN {12} AND {13}",
-                                        orderBystr, columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB,
-                                        keystrA, keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC,
-                                        whereStr, (pageIndex - 1) * pageSize + 1, pageIndex * pageSize);
-                                break;
-                            case DatabaseType.MySql:
-                                sql +=
-                                    string.Format(
-                                        "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11} LIMIT {12},{13}",
-                                        columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                        keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC, whereStr,
-                                        orderBystr, (pageIndex - 1) * pageSize, pageSize);
-                                break;
-                        }
+                        sql += DbHelper.GetJoinPageSql(tablenameA, tablenameB, tablenameC, keystrA, keystrB, joinType1.ToString().ToUpper(),
+                            keystrB1, keystrC, joinType2.ToString().ToUpper(), columnStr, whereStr, orderBystr, pageSize, pageIndex);
                     }
                     else
                     {
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql +=
-                                    string.Format(
-                                        "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11}",
-                                        columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB,
-                                        keystrA, keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC,
-                                        whereStr, orderBystr);
-                                break;
-                            case DatabaseType.MySql:
-                                sql +=
-                                    string.Format(
-                                        "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11} ",
-                                        columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                        keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC, whereStr,
-                                        orderBystr);
-                                break;
-                        }
+                        sql += string.Format(
+                                "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11}",
+                                columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB,
+                                keystrA, keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrB1, keystrC,
+                                whereStr, orderBystr);
+
                     }
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (pageSize > 0)
@@ -2423,20 +1511,20 @@ namespace CXData.ORM
                 string columnStr = string.Empty;
                 string orderBystr = string.Empty;
                 List<DbParameter> dbparaList = new List<DbParameter>();
-                string keystrA = LambdaExtension.ExpressionRouter(outerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA = outerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrA))
                 {
                     tablenameA += " AS ";
                     tablenameA += outerKeySelector.Parameters[0].Name;
                 }
-                string keystrB = LambdaExtension.ExpressionRouter(innerKeySelector.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrB = innerKeySelector.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrB))
                 {
                     tablenameB += " AS ";
                     tablenameB += innerKeySelector.Parameters[0].Name;
                 }
-                string keystrA1 = LambdaExtension.ExpressionRouter(outerKeySelector1.Body, null, AnalyType.Column, true, OperandType.Left);
-                string keystrC = LambdaExtension.ExpressionRouter(innerKeySelector2.Body, null, AnalyType.Column, true, OperandType.Left);
+                string keystrA1 = outerKeySelector1.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
+                string keystrC = innerKeySelector2.Body.ExpressionRouter(null, AnalyType.Column, true, OperandType.Left);
                 if (!string.IsNullOrEmpty(keystrC))
                 {
                     tablenameC += " AS ";
@@ -2452,78 +1540,24 @@ namespace CXData.ORM
                 }
                 else
                 {
-                    var iniexp = resultSelector.Body as MemberInitExpression;
-                    if (iniexp != null)
-                    {
-                        MemberInitExpression memIniexp = iniexp;
-                        foreach (var item in memIniexp.Bindings)
-                        {
-                            MemberAssignment memaig = item as MemberAssignment;
-                            if (memaig != null)
-                            {
-                                var constantExpression = memaig.Expression as ConstantExpression;
-                                if (constantExpression != null)
-                                {
-                                    ConstantExpression ce = constantExpression;
-                                    if (ce.Value == null)
-                                    {
-                                        columnStr += "NULL";
-                                    }
-                                    else if (ce.Value is ValueType)
-                                    {
-                                        columnStr += string.Format("{0}", ce.Value);
-                                    }
-                                    else if (ce.Value is string || ce.Value is DateTime || ce.Value is char || ce.Value is Guid)
-                                    {
-                                        columnStr += string.Format("'{0}'", ce.Value);
-                                    }
-                                }
-                                else
-                                {
-                                    columnStr += LambdaExtension.ExpressionRouter(memaig.Expression, null, AnalyType.Column, true, OperandType.Left);
-                                }
-                                columnStr += string.Format(" AS [{0}]", item.Member.Name);
-                                columnStr += ",";
-                            }
-                        }
-                        columnStr = columnStr.TrimEnd(',');
-                    }
+                    columnStr = resultSelector.Body.ExpressionRouter(dbparaList, AnalyType.Column, true, OperandType.Left);
                 }
                 if (whereSelector != null)
                 {
-                    var body = whereSelector.Body as BinaryExpression;
-                    if (body != null)
-                    {
-                        BinaryExpression be = body;
-                        whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, AnalyType.Param, true);
-                    }
-                    else if (whereSelector.Body is MethodCallExpression)
-                    {
-                        whereStr = LambdaExtension.CallExpression(whereSelector.Body, dbparaList, AnalyType.Param, true);
-                    }
-                    if (!string.IsNullOrEmpty(whereStr))
-                    {
-                        whereStr = string.Format(" WHERE {0}", whereStr);
-                    }
+                    whereStr = whereSelector.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
                 }
 
                 if (funOrder != null)
                 {
-                    var fbody = funOrder.Body as BinaryExpression;
-                    if (fbody != null)
-                    {
-                        BinaryExpression be = fbody;
-                        orderBystr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, null, AnalyType.Order, true);
-                    }
-                    else if (funOrder.Body is MethodCallExpression)
-                    {
-                        orderBystr = LambdaExtension.CallExpression(funOrder.Body, null, AnalyType.Order, true);
-                    }
+                    orderBystr = funOrder.Body.ExpressionRouter(null, AnalyType.Order, true, OperandType.Left);
                 }
                 if (!string.IsNullOrEmpty(columnStr) && !string.IsNullOrEmpty(keystrA) && !string.IsNullOrEmpty(keystrB))
                 {
+                    if (!string.IsNullOrEmpty(whereStr))
+                    {
+                        whereStr = string.Format(" WHERE {0}", whereStr);
+                    }
                     string sql = "";
-                    DatabaseType databaseType = DbHelper.GetDatabaseType();
                     if (pageSize > 0)
                     {
                         sql = string.Format(
@@ -2532,43 +1566,19 @@ namespace CXData.ORM
                             joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC, whereStr);
                         DbParameter param = DbHelper.CreateOutDbParameter("@TotalRecord", DbType.Int32);
                         dbparaList.Add(param);
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql += string.Format(
-                                    "SELECT * FROM (SELECT ROW_NUMBER() OVER ({0}) AS ROWID ,{1} FROM {2} {3} JOIN {4} ON {5}={6} {7} JOIN {8} ON {9}={10} {11})AS T WHERE ROWID BETWEEN {12} AND {13} ",
-                                    orderBystr, columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB,
-                                    keystrA, keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC,
-                                    whereStr, (pageIndex - 1) * pageSize + 1, pageIndex * pageSize);
-                                break;
-                            case DatabaseType.MySql:
-                                sql += string.Format(
-                                    "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11} LIMIT {12},{13}",
-                                    columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                    keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC, whereStr,
-                                    orderBystr, (pageIndex - 1) * pageSize, pageSize);
-                                break;
-                        }
+                        sql += string.Format(
+                                "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11}",
+                                columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB,
+                                keystrA, keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC,
+                                whereStr, orderBystr);
                     }
                     else
                     {
-                        switch (databaseType)
-                        {
-                            case DatabaseType.SqlServer:
-                                sql += string.Format(
-                                    "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11}",
-                                    columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                    keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC, whereStr,
-                                    orderBystr);
-                                break;
-                            case DatabaseType.MySql:
-                                sql += string.Format(
-                                    "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11}",
-                                    columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
-                                    keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC, whereStr,
-                                    orderBystr);
-                                break;
-                        }
+                        sql += string.Format(
+                            "SELECT {0} FROM {1} {2} JOIN {3} ON {4}={5} {6} JOIN {7} ON {8}={9} {10} {11}",
+                            columnStr, tablenameA, joinType1.ToString().ToUpper(), tablenameB, keystrA,
+                            keystrB, joinType2.ToString().ToUpper(), tablenameC, keystrA1, keystrC, whereStr,
+                            orderBystr);
                     }
                     DataSet ds = DbHelper.ExecuteDataSet(CommandType.Text, sql, dbparaList.ToArray());
                     if (pageSize > 0)
@@ -2602,22 +1612,11 @@ namespace CXData.ORM
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (func != null)
             {
-                var body = func.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList,
-                        AnalyType.Param, false);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param,
-                        false);
-                }
-                if (!string.IsNullOrEmpty(whereStr))
-                {
-                    whereStr = string.Format(" WHERE {0}", whereStr);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+            }
+            if (!string.IsNullOrEmpty(whereStr))
+            {
+                whereStr = string.Format(" WHERE {0}", whereStr);
             }
             string sql = string.Format("SELECT COUNT(1) FROM {0} {1}", tableName, whereStr);
             return DbHelper.ExecuteCount(sql, dbparaList.ToArray());
@@ -2637,22 +1636,11 @@ namespace CXData.ORM
             string tableName = LambdaExtension.GetTabName(entity);
             if (func != null)
             {
-                var body = func.Body as BinaryExpression;
-                if (body != null)
-                {
-                    BinaryExpression be = body;
-                    whereStr = LambdaExtension.BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList,
-                        AnalyType.Param, false);
-                }
-                else if (func.Body is MethodCallExpression)
-                {
-                    whereStr = LambdaExtension.CallExpression(func.Body, dbparaList, AnalyType.Param,
-                        false);
-                }
-                if (!string.IsNullOrEmpty(whereStr))
-                {
-                    whereStr = string.Format(" WHERE {0}", whereStr);
-                }
+                whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
+            }
+            if (!string.IsNullOrEmpty(whereStr))
+            {
+                whereStr = string.Format(" WHERE {0}", whereStr);
             }
             string sql = "";
             DatabaseType databaseType = DbHelper.GetDatabaseType();

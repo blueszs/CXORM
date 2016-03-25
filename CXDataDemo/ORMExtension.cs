@@ -1639,9 +1639,9 @@ namespace CXData.ORM
                 whereStr = func.Body.ExpressionRouter(dbparaList, AnalyType.Param, true, OperandType.Left);
             }
             if (!string.IsNullOrEmpty(whereStr))
-            {
-                whereStr = string.Format(" WHERE {0}", whereStr);
-            }
+                {
+                    whereStr = string.Format(" WHERE {0}", whereStr);
+                }
             string sql = "";
             DatabaseType databaseType = DbHelper.GetDatabaseType();
             switch (databaseType)

@@ -17,6 +17,10 @@
         /// <summary>
         /// 排序
         /// </summary>
-        Order
+        Order,
+        /// <summary>
+        /// 分组
+        /// </summary>
+        Group
     }
 }

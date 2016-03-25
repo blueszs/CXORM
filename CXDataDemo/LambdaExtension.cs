@@ -669,115 +669,12 @@ namespace CXData.ORM
                             }
                         }
                         break;
-                    case "COLUMNS":
-                        {
-                            ruesltStr = RuesltColumnsStr(dbparaList, isAliases, leftname, mce, ruesltStr);
-                        }
-                        break;
                     default:
                         {
                             ruesltStr = exp.DynamicInvokeExpression(mce.Method.Name, analyType, dbparaList, leftname);
                         }
                         break;
                 }
-            }
-            return ruesltStr;
-        }
-
-        /// <summary>
-        /// 获取字段
-        /// </summary>
-        /// <param name="dbparaList"></param>
-        /// <param name="isAliases"></param>
-        /// <param name="leftname"></param>
-        /// <param name="mce"></param>
-        /// <param name="ruesltStr"></param>
-        /// <returns></returns>
-        internal static string RuesltColumnsStr(List<DbParameter> dbparaList, bool isAliases, string leftname, MethodCallExpression mce, string ruesltStr)
-        {
-            switch (mce.Arguments[1].NodeType)
-            {
-                case ExpressionType.MemberAccess:
-                    {
-                        ruesltStr = mce.Arguments[1].ExpressionRouter(null, AnalyType.Column, isAliases, OperandType.Left);
-                        break;
-                    }
-                case ExpressionType.NewArrayBounds:
-                case ExpressionType.NewArrayInit:
-                    {
-                        NewArrayExpression expressionParams = mce.Arguments[1] as NewArrayExpression;
-                        if (expressionParams != null && expressionParams.Expressions.Any())
-                        {
-                            ruesltStr = "";
-                            foreach (Expression ex in expressionParams.Expressions)
-                            {
-                                if (!string.IsNullOrEmpty(ruesltStr))
-                                {
-                                    ruesltStr += ",";
-                                }
-                                UnaryExpression ue = ex as UnaryExpression;
-                                if (ue != null)
-                                {
-                                    MethodCallExpression met = ue.Operand as MethodCallExpression;
-                                    if (met != null)
-                                    {
-                                        switch (met.Method.Name.ToUpper())
-                                        {
-                                            case "AS":
-                                                ruesltStr += ex.ExpressionRouter(dbparaList, AnalyType.Column,
-                                                    isAliases, OperandType.Left);
-                                                break;
-                                            case "SUMVALUE":
-                                                ruesltStr += string.Format("{0}",
-                                                    ex.ExpressionRouter(null, AnalyType.Column, isAliases,
-                                                        OperandType.Left));
-                                                break;
-                                            default:
-                                                if (string.IsNullOrEmpty(leftname))
-                                                {
-                                                    ruesltStr += ex.ExpressionRouter(null, AnalyType.Column, isAliases,
-                                                        OperandType.Left);
-                                                }
-                                                else
-                                                {
-                                                    ruesltStr += string.Format("{0}.{1}", leftname,
-                                                        ex.ExpressionRouter(null, AnalyType.Column, isAliases,
-                                                            OperandType.Left));
-                                                }
-                                                break;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (string.IsNullOrEmpty(leftname))
-                                        {
-                                            ruesltStr += ex.ExpressionRouter(null, AnalyType.Column, isAliases,
-                                                OperandType.Left);
-                                        }
-                                        else
-                                        {
-                                            ruesltStr += string.Format("{0}.{1}", leftname,
-                                                ex.ExpressionRouter(null, AnalyType.Column, isAliases, OperandType.Left));
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    if (string.IsNullOrEmpty(leftname))
-                                    {
-                                        ruesltStr += ex.ExpressionRouter(null, AnalyType.Column, isAliases,
-                                            OperandType.Left);
-                                    }
-                                    else
-                                    {
-                                        ruesltStr += string.Format("{0}.{1}", leftname,
-                                            ex.ExpressionRouter(null, AnalyType.Column, isAliases, OperandType.Left));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
             }
             return ruesltStr;
         }
@@ -897,7 +794,7 @@ namespace CXData.ORM
                         }
                         return para.ParameterName;
                     }
-                    ruesltStr = result.GetType().BaseType == typeof(ValueType)
+                    ruesltStr = result.GetType() == typeof(ValueType)
                         ? result.ToString()
                         : string.Format("'{0}'", result);
                 }
@@ -1314,7 +1211,7 @@ namespace CXData.ORM
                     return mes.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName);
                 }
             }
-            return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, (leftname ?? outParaName));
+            return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, leftname);
         }
 
         /// <summary>
@@ -1562,7 +1459,7 @@ namespace CXData.ORM
                             var expression = methodCall.Arguments[1] as MemberExpression;
                             if (expression != null)
                             {
-                                strColumns.Add(expression.ExpressionRouter(null, AnalyType.Column, false, OperandType.Left));
+                                strColumns.Add(expression.ExpressionRouter( null, AnalyType.Column, false, OperandType.Left));
                             }
                             break;
                         }

@@ -50,6 +50,6 @@ D:\CXORM\CXORM\CXDataDemo\CXData\bin\Debug\CXData.dll.config
 D:\CXORM\CXORM\CXDataDemo\CXData\bin\Debug\CXData.dll
 D:\CXORM\CXORM\CXDataDemo\CXData\bin\Debug\CXData.pdb
 D:\CXORM\CXORM\CXDataDemo\CXData\bin\Debug\MySql.Data.dll
-D:\CXORM\CXORM\CXDataDemo\CXData\obj\Debug\CXData.csprojResolveAssemblyReference.cache
 D:\CXORM\CXORM\CXDataDemo\CXData\obj\Debug\CXData.dll
 D:\CXORM\CXORM\CXDataDemo\CXData\obj\Debug\CXData.pdb
+D:\CXORM\CXORM\CXDataDemo\CXData\obj\Debug\CXData.csprojResolveAssemblyReference.cache

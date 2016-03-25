@@ -148,6 +148,19 @@ namespace CXData.ORM
         }
 
         /// <summary>
+        /// 字段数组
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
+        /// <param name="obj"></param>
+        /// <param name="array"></param>
+        /// <returns></returns>
+        public static TKey Columns<T, TKey>(this T obj, TKey array)
+        {
+            return array;
+        }
+
+        /// <summary>
         /// 获取行记录数
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -362,8 +375,27 @@ namespace CXData.ORM
         /// <param name="dbparaList"></param>
         /// <param name="analyType"></param>
         /// <param name="isAliases"></param>
+        /// <param name="leftname"></param>
+        /// <param name="groupDic"></param>
         /// <returns></returns>
-        public static string CallExpression(Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases)
+        internal static string CallExpression(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType,
+            bool isAliases, string leftname = "", Dictionary<string, string> groupDic = null)
+        {
+            string outParaName = string.Empty;
+            return exp.CallExpression(dbparaList, analyType, isAliases, ref outParaName, leftname, groupDic);
+        }
+
+        /// <summary>
+        /// 表达式方法解析
+        /// </summary>
+        /// <param name="exp"></param>
+        /// <param name="dbparaList"></param>
+        /// <param name="analyType"></param>
+        /// <param name="isAliases"></param>
+        /// <param name="leftname"></param>
+        /// <param name="groupDic"></param>
+        /// <returns></returns>
+        internal static string CallExpression(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases, ref string outParaName, string leftname = "", Dictionary<string, string> groupDic = null)
         {
             string ruesltStr = string.Empty;
             MethodCallExpression mce = exp as MethodCallExpression;
@@ -373,10 +405,10 @@ namespace CXData.ORM
                 {
                     case "LIKE":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
-                                OperandType.Right);
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            string rightStr = mce.Arguments[1].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Right, outParaName);
                             if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
                             {
                                 ruesltStr = string.Format("({0} LIKE {1})", leftStr, rightStr);
@@ -385,10 +417,10 @@ namespace CXData.ORM
                         break;
                     case "NOTLIKE":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
-                                OperandType.Right);
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            string rightStr = mce.Arguments[1].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Right, outParaName);
                             if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
                             {
                                 ruesltStr = string.Format("({0} NOT LIKE {1})", leftStr, rightStr);
@@ -397,10 +429,10 @@ namespace CXData.ORM
                         break;
                     case "IN":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
-                                OperandType.Right);
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            string rightStr = mce.Arguments[1].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Right, outParaName);
                             if (!string.IsNullOrEmpty(leftStr))
                             {
                                 if (string.IsNullOrEmpty(rightStr))
@@ -413,10 +445,10 @@ namespace CXData.ORM
                         break;
                     case "NOTIN":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
-                                OperandType.Right);
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            string rightStr = mce.Arguments[1].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Right, outParaName);
                             if (!string.IsNullOrEmpty(leftStr))
                             {
                                 if (string.IsNullOrEmpty(rightStr))
@@ -429,27 +461,41 @@ namespace CXData.ORM
                         break;
                     case "ASC":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], null, analyType, isAliases, OperandType.Left);
+                            string leftStr = mce.Arguments[0].ExpressionRouter(null, analyType, isAliases, OperandType.Left, ref outParaName);
                             if (!string.IsNullOrEmpty(leftStr))
                             {
-                                ruesltStr = string.Format(" ORDER BY {0} ASC", leftStr);
+                                if (groupDic != null && groupDic.ContainsKey(outParaName))
+                                {
+                                    ruesltStr = string.Format(" ORDER BY {0} ASC", groupDic[outParaName]);
+                                }
+                                else
+                                {
+                                    ruesltStr = string.Format(" ORDER BY {0} ASC", leftStr);
+                                }
                             }
                         }
                         break;
                     case "DESC":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], null, analyType, isAliases, OperandType.Left);
+                            string leftStr = mce.Arguments[0].ExpressionRouter(null, analyType, isAliases, OperandType.Left, ref outParaName);
                             if (!string.IsNullOrEmpty(leftStr))
                             {
-                                ruesltStr = string.Format(" ORDER BY {0} DESC", leftStr);
+                                if (groupDic != null && groupDic.ContainsKey(outParaName))
+                                {
+                                    ruesltStr = string.Format(" ORDER BY {0} DESC", groupDic[outParaName]);
+                                }
+                                else
+                                {
+                                    ruesltStr = string.Format(" ORDER BY {0} DESC", leftStr);
+                                }
                             }
                         }
                         break;
                     case "AS":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
                                 OperandType.Left);
-                            string rightStr = ExpressionRouter(mce.Arguments[1], null, analyType, isAliases,
+                            string rightStr = mce.Arguments[1].ExpressionRouter(null, analyType, isAliases,
                                 OperandType.Right);
                             if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
                             {
@@ -459,9 +505,17 @@ namespace CXData.ORM
                         break;
                     case "ROWCOUNT":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr))
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                    OperandType.Left, ref outParaName);
+                            if (analyType == AnalyType.Group)
+                            {
+                                if (!string.IsNullOrEmpty(leftStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" COUNT({0})", leftStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
                             {
                                 ruesltStr = string.Format(" COUNT({0})", leftStr);
                             }
@@ -469,9 +523,16 @@ namespace CXData.ORM
                         break;
                     case "SUMVALUE":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr))
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases, OperandType.Left, ref outParaName);
+                            if (analyType == AnalyType.Group)
+                            {
+                                if (!string.IsNullOrEmpty(leftStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" SUM({0})", leftStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
                             {
                                 ruesltStr = string.Format(" SUM({0})", leftStr);
                             }
@@ -479,9 +540,16 @@ namespace CXData.ORM
                         break;
                     case "MAXVALUE":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr))
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases, OperandType.Left, ref outParaName);
+                            if (analyType == AnalyType.Group)
+                            {
+                                if (!string.IsNullOrEmpty(leftStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" MAX({0})", leftStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
                             {
                                 ruesltStr = string.Format(" MAX({0})", leftStr);
                             }
@@ -489,9 +557,17 @@ namespace CXData.ORM
                         break;
                     case "MINVALUE":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr))
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            if (analyType == AnalyType.Group)
+                            {
+                                if (!string.IsNullOrEmpty(leftStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" MIN({0})", leftStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
                             {
                                 ruesltStr = string.Format(" MIN({0})", leftStr);
                             }
@@ -499,9 +575,17 @@ namespace CXData.ORM
                         break;
                     case "AVGVALUE":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr))
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            if (analyType == AnalyType.Group)
+                            {
+                                if (!string.IsNullOrEmpty(leftStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" AVG({0})", leftStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
                             {
                                 ruesltStr = string.Format(" AVG({0})", leftStr);
                             }
@@ -509,21 +593,38 @@ namespace CXData.ORM
                         break;
                     case "LEN":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Right);
-                            if (!string.IsNullOrEmpty(leftStr))
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            if (analyType == AnalyType.Group)
                             {
-                                ruesltStr = string.Format(" LEN ({0})", leftStr);
+                                if (!string.IsNullOrEmpty(leftStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" LEN({0})", leftStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
+                            {
+                                ruesltStr = string.Format(" LEN({0})", leftStr);
                             }
                         }
                         break;
                     case "LEFT":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Right, ref outParaName);
+                            string rightStr = mce.Arguments[1].ExpressionRouter(dbparaList, analyType, isAliases,
                                 OperandType.Right);
-                            string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
-                                OperandType.Right);
-                            if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
+
+                            if (analyType == AnalyType.Group)
+                            {
+                                if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" LEFT ({0},{1})", leftStr, rightStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
                             {
                                 ruesltStr = string.Format(" LEFT ({0},{1})", leftStr, rightStr);
                             }
@@ -531,11 +632,19 @@ namespace CXData.ORM
                         break;
                     case "RIGHT":
                         {
-                            string leftStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
+                            string leftStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Right, ref outParaName);
+                            string rightStr = mce.Arguments[1].ExpressionRouter(dbparaList, analyType, isAliases,
                                 OperandType.Right);
-                            string rightStr = ExpressionRouter(mce.Arguments[1], dbparaList, analyType, isAliases,
-                                OperandType.Right);
-                            if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
+                            if (analyType == AnalyType.Group)
+                            {
+                                if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" RIGHT ({0},{1})", leftStr, rightStr));
+                                    ruesltStr = leftStr;
+                                }
+                            }
+                            else
                             {
                                 ruesltStr = string.Format(" RIGHT ({0},{1})", leftStr, rightStr);
                             }
@@ -544,20 +653,131 @@ namespace CXData.ORM
                     case "CONVERTTYPE":
                         {
                             string leftStr = mce.Method.ReturnType.ConvertDbType();
-                            string rightStr = ExpressionRouter(mce.Arguments[0], dbparaList, analyType, isAliases,
-                                OperandType.Left);
-                            if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr))
+                            string rightStr = mce.Arguments[0].ExpressionRouter(dbparaList, analyType, isAliases,
+                                OperandType.Left, ref outParaName);
+                            if (analyType == AnalyType.Group)
                             {
-                                ruesltStr = string.Format(" CONVERT({0},{1})", leftStr, rightStr);
+                                if (!string.IsNullOrEmpty(leftStr) && !string.IsNullOrEmpty(rightStr) && groupDic != null)
+                                {
+                                    groupDic.Add(leftStr, string.Format(" CONVERT ({0},{1})", leftStr, rightStr));
+                                    ruesltStr = leftStr;
+                                }
                             }
+                            else
+                            {
+                                ruesltStr = string.Format(" CONVERT ({0},{1})", leftStr, rightStr);
+                            }
+                        }
+                        break;
+                    case "COLUMNS":
+                        {
+                            ruesltStr = RuesltColumnsStr(dbparaList, isAliases, leftname, mce, ruesltStr);
                         }
                         break;
                     default:
                         {
-                            ruesltStr = DynamicInvokeExpression(exp, mce.Method.Name, analyType, dbparaList);
+                            ruesltStr = exp.DynamicInvokeExpression(mce.Method.Name, analyType, dbparaList, leftname);
                         }
                         break;
                 }
+            }
+            return ruesltStr;
+        }
+
+        /// <summary>
+        /// 获取字段
+        /// </summary>
+        /// <param name="dbparaList"></param>
+        /// <param name="isAliases"></param>
+        /// <param name="leftname"></param>
+        /// <param name="mce"></param>
+        /// <param name="ruesltStr"></param>
+        /// <returns></returns>
+        internal static string RuesltColumnsStr(List<DbParameter> dbparaList, bool isAliases, string leftname, MethodCallExpression mce, string ruesltStr)
+        {
+            switch (mce.Arguments[1].NodeType)
+            {
+                case ExpressionType.MemberAccess:
+                    {
+                        ruesltStr = mce.Arguments[1].ExpressionRouter(null, AnalyType.Column, isAliases, OperandType.Left);
+                        break;
+                    }
+                case ExpressionType.NewArrayBounds:
+                case ExpressionType.NewArrayInit:
+                    {
+                        NewArrayExpression expressionParams = mce.Arguments[1] as NewArrayExpression;
+                        if (expressionParams != null && expressionParams.Expressions.Any())
+                        {
+                            ruesltStr = "";
+                            foreach (Expression ex in expressionParams.Expressions)
+                            {
+                                if (!string.IsNullOrEmpty(ruesltStr))
+                                {
+                                    ruesltStr += ",";
+                                }
+                                UnaryExpression ue = ex as UnaryExpression;
+                                if (ue != null)
+                                {
+                                    MethodCallExpression met = ue.Operand as MethodCallExpression;
+                                    if (met != null)
+                                    {
+                                        switch (met.Method.Name.ToUpper())
+                                        {
+                                            case "AS":
+                                                ruesltStr += ex.ExpressionRouter(dbparaList, AnalyType.Column,
+                                                    isAliases, OperandType.Left);
+                                                break;
+                                            case "SUMVALUE":
+                                                ruesltStr += string.Format("{0}",
+                                                    ex.ExpressionRouter(null, AnalyType.Column, isAliases,
+                                                        OperandType.Left));
+                                                break;
+                                            default:
+                                                if (string.IsNullOrEmpty(leftname))
+                                                {
+                                                    ruesltStr += ex.ExpressionRouter(null, AnalyType.Column, isAliases,
+                                                        OperandType.Left);
+                                                }
+                                                else
+                                                {
+                                                    ruesltStr += string.Format("{0}.{1}", leftname,
+                                                        ex.ExpressionRouter(null, AnalyType.Column, isAliases,
+                                                            OperandType.Left));
+                                                }
+                                                break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (string.IsNullOrEmpty(leftname))
+                                        {
+                                            ruesltStr += ex.ExpressionRouter(null, AnalyType.Column, isAliases,
+                                                OperandType.Left);
+                                        }
+                                        else
+                                        {
+                                            ruesltStr += string.Format("{0}.{1}", leftname,
+                                                ex.ExpressionRouter(null, AnalyType.Column, isAliases, OperandType.Left));
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    if (string.IsNullOrEmpty(leftname))
+                                    {
+                                        ruesltStr += ex.ExpressionRouter(null, AnalyType.Column, isAliases,
+                                            OperandType.Left);
+                                    }
+                                    else
+                                    {
+                                        ruesltStr += string.Format("{0}.{1}", leftname,
+                                            ex.ExpressionRouter(null, AnalyType.Column, isAliases, OperandType.Left));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
             }
             return ruesltStr;
         }
@@ -569,10 +789,12 @@ namespace CXData.ORM
         /// <param name="dataFliex"></param>
         /// <param name="analyType"></param>
         /// <param name="dbparaList"></param>
+        /// <param name="leftname"></param>
         /// <returns></returns>
-        public static string DynamicInvokeExpression(Expression exp, string dataFliex, AnalyType analyType, List<DbParameter> dbparaList)
+        internal static string DynamicInvokeExpression(this Expression exp, string dataFliex, AnalyType analyType, List<DbParameter> dbparaList, string leftname = "")
         {
             string ruesltStr = string.Empty;
+            string paraName = string.IsNullOrEmpty(leftname) ? dataFliex : leftname;
             var result = Expression.Lambda(exp).Compile().DynamicInvoke();
             if (result is Array)
             {
@@ -589,7 +811,7 @@ namespace CXData.ORM
                     {
                         if (dbparaList != null && analyType != AnalyType.Order)
                         {
-                            DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex, objitem);
+                            DbParameter para = DbHelper.CreateInDbParameter("@" + paraName, objitem);
                             if (
                                 !dbparaList.Any(
                                     x =>
@@ -597,7 +819,7 @@ namespace CXData.ORM
                             {
                                 if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                 {
-                                    para.ParameterName = "@" + dataFliex +
+                                    para.ParameterName = "@" + paraName +
                                                          dbparaList.Count(
                                                              x => x.ParameterName.StartsWith(para.ParameterName));
                                 }
@@ -629,12 +851,12 @@ namespace CXData.ORM
                     {
                         if (dbparaList != null && analyType != AnalyType.Order)
                         {
-                            DbParameter para = new System.Data.SqlClient.SqlParameter("@" + dataFliex, item);
+                            DbParameter para = DbHelper.CreateInDbParameter("@" + paraName, item);
                             if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                             {
                                 if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                                 {
-                                    para.ParameterName = "@" + dataFliex +
+                                    para.ParameterName = "@" + paraName +
                                                          dbparaList.Count(
                                                              x => x.ParameterName.StartsWith(para.ParameterName));
                                 }
@@ -662,12 +884,12 @@ namespace CXData.ORM
                 {
                     if (dbparaList != null && analyType != AnalyType.Order)
                     {
-                        DbParameter para = DbHelper.CreateInDbParameter("@" + dataFliex, result);
+                        DbParameter para = DbHelper.CreateInDbParameter("@" + paraName, result);
                         if (!dbparaList.IsAny(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                         {
                             if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
                             {
-                                para.ParameterName = "@" + dataFliex +
+                                para.ParameterName = "@" + paraName +
                                                      dbparaList.Count(
                                                          x => x.ParameterName.StartsWith(para.ParameterName));
                             }
@@ -675,7 +897,7 @@ namespace CXData.ORM
                         }
                         return para.ParameterName;
                     }
-                    ruesltStr = result.GetType() == typeof(ValueType)
+                    ruesltStr = result.GetType().BaseType == typeof(ValueType)
                         ? result.ToString()
                         : string.Format("'{0}'", result);
                 }
@@ -692,75 +914,85 @@ namespace CXData.ORM
         /// <param name="dbparaList"></param>
         /// <param name="analyType"></param>
         /// <param name="isAliases"></param>
+        /// <param name="outParaName"></param>
+        /// <param name="leftname"></param>
+        /// <param name="groupDic"></param>
         /// <returns></returns>
-        public static string BinarExpressionProvider(Expression left, Expression right, ExpressionType type, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases)
+        internal static string BinarExpressionProvider(Expression left, Expression right, ExpressionType type, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases, ref string outParaName, string leftname, Dictionary<string, string> groupDic)
         {
             StringBuilder sb = new StringBuilder();
             string tmpStrLen;
             switch (analyType)
             {
                 case AnalyType.Param:
-                    sb.Append("(");
-                    sb.Append(ExpressionRouter(left, dbparaList, analyType, isAliases, OperandType.Left));
-                    tmpStrLen = ExpressionRouter(right, dbparaList, analyType, isAliases, OperandType.Right);
-                    if (tmpStrLen.ToUpper() == "NULL")
                     {
-                        switch (type)
+                        string paraName = string.Empty;
+                        sb.Append("(");
+                        sb.Append(left.ExpressionRouter(dbparaList, analyType, isAliases, OperandType.Left, ref paraName));
+                        tmpStrLen = right.ExpressionRouter(dbparaList, analyType, isAliases, OperandType.Right, paraName);
+                        if (tmpStrLen.ToUpper() == "NULL")
                         {
-                            case ExpressionType.Equal:
-                                sb.Append(" IS NULL");
-                                break;
-                            case ExpressionType.NotEqual:
-                                sb.Append(" IS NOT NULL");
-                                break;
-                            default:
-                                sb.Append(ExpressionTypeCast(type));
-                                sb.Append(tmpStrLen);
-                                break;
+                            switch (type)
+                            {
+                                case ExpressionType.Equal:
+                                    sb.Append(" IS NULL");
+                                    break;
+                                case ExpressionType.NotEqual:
+                                    sb.Append(" IS NOT NULL");
+                                    break;
+                                default:
+                                    sb.Append(ExpressionTypeCast(type));
+                                    sb.Append(tmpStrLen);
+                                    break;
+                            }
                         }
+                        else if (!string.IsNullOrEmpty(tmpStrLen))
+                        {
+                            sb.Append(ExpressionTypeCast(type));
+                            sb.Append(tmpStrLen);
+                        }
+                        sb.Append(")");
+                        break;
                     }
-                    else if (!string.IsNullOrEmpty(tmpStrLen))
-                    {
-                        sb.Append(ExpressionTypeCast(type));
-                        sb.Append(tmpStrLen);
-                    }
-                    sb.Append(")");
-                    break;
                 case AnalyType.Order:
-                    sb.Append(ExpressionRouter(left, null, analyType, isAliases, OperandType.Left));
-                    tmpStrLen = ExpressionRouter(right, null, analyType, isAliases, OperandType.Left);
-                    if (sb.Length > 0)
                     {
-                        sb.Append(",");
-                        tmpStrLen = tmpStrLen.Replace("ORDER BY ", "");
-                    }
-                    sb.Append(tmpStrLen);
-                    break;
-                case AnalyType.Column:
-                    sb.Append(ExpressionRouter(left, null, analyType, isAliases, OperandType.Left));
-                    tmpStrLen = ExpressionRouter(right, null, analyType, isAliases, OperandType.Left);
-                    if (tmpStrLen.ToUpper() == "NULL")
-                    {
-                        switch (type)
+                        sb.Append(left.ExpressionRouter(null, analyType, isAliases, OperandType.Left, ref outParaName, leftname, groupDic));
+                        tmpStrLen = right.ExpressionRouter(null, analyType, isAliases, OperandType.Left, ref outParaName, leftname, groupDic);
+                        if (sb.Length > 0)
                         {
-                            case ExpressionType.Equal:
-                                sb.Append(" IS NULL");
-                                break;
-                            case ExpressionType.NotEqual:
-                                sb.Append(" IS NOT NULL");
-                                break;
-                            default:
-                                sb.Append(ExpressionTypeCast(type));
-                                sb.Append(tmpStrLen);
-                                break;
+                            sb.Append(",");
+                            tmpStrLen = tmpStrLen.Replace("ORDER BY ", "");
                         }
-                    }
-                    else
-                    {
-                        sb.Append(ExpressionTypeCast(type));
                         sb.Append(tmpStrLen);
+                        break;
                     }
-                    break;
+                case AnalyType.Column:
+                    {
+                        sb.Append(left.ExpressionRouter(null, analyType, isAliases, OperandType.Left));
+                        tmpStrLen = right.ExpressionRouter(null, analyType, isAliases, OperandType.Left);
+                        if (tmpStrLen.ToUpper() == "NULL")
+                        {
+                            switch (type)
+                            {
+                                case ExpressionType.Equal:
+                                    sb.Append(" IS NULL");
+                                    break;
+                                case ExpressionType.NotEqual:
+                                    sb.Append(" IS NOT NULL");
+                                    break;
+                                default:
+                                    sb.Append(ExpressionTypeCast(type));
+                                    sb.Append(tmpStrLen);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            sb.Append(ExpressionTypeCast(type));
+                            sb.Append(tmpStrLen);
+                        }
+                        break;
+                    }
             }
             return sb.ToString();
         }
@@ -773,8 +1005,59 @@ namespace CXData.ORM
         /// <param name="analyType"></param>
         /// <param name="isAliases">是否别名</param>
         /// <param name="operaType"></param>
+        /// <param name="leftname"></param>
         /// <returns></returns>
-        public static string ExpressionRouter(Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases, OperandType operaType)
+        internal static string ExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases, OperandType operaType, string leftname = "")
+        {
+            string outParaName = string.Empty;
+            return exp.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname);
+        }
+
+        /// <summary>
+        /// 表达式解析
+        /// </summary>
+        /// <param name="exp"></param>
+        /// <param name="dbparaList"></param>
+        /// <param name="analyType"></param>
+        /// <param name="isAliases">是否别名</param>
+        /// <param name="operaType"></param>
+        /// <param name="groupDic"></param>
+        /// <returns></returns>
+        internal static string ExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases, OperandType operaType, Dictionary<string, string> groupDic)
+        {
+            string outParaName = string.Empty;
+            return exp.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, null, groupDic);
+        }
+
+        /// <summary>
+        /// 表达式解析
+        /// </summary>
+        /// <param name="exp"></param>
+        /// <param name="dbparaList"></param>
+        /// <param name="analyType"></param>
+        /// <param name="isAliases">是否别名</param>
+        /// <param name="operaType"></param>
+        /// <param name="outParaName"></param>
+        /// <param name="groupDic"></param>
+        /// <returns></returns>
+        internal static string ExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases, OperandType operaType, ref string outParaName, Dictionary<string, string> groupDic)
+        {
+            return exp.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, null, groupDic);
+        }
+
+        /// <summary>
+        /// 表达式解析
+        /// </summary>
+        /// <param name="exp"></param>
+        /// <param name="dbparaList"></param>
+        /// <param name="analyType"></param>
+        /// <param name="isAliases">是否别名</param>
+        /// <param name="operaType"></param>
+        /// <param name="outParaName"></param>
+        /// <param name="leftname"></param>
+        /// <param name="groupDic"></param>
+        /// <returns></returns>
+        internal static string ExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases, OperandType operaType, ref string outParaName, string leftname = null, Dictionary<string, string> groupDic = null)
         {
             switch (exp.NodeType)
             {
@@ -785,116 +1068,265 @@ namespace CXData.ORM
                 case ExpressionType.LessThanOrEqual:
                 case ExpressionType.NotEqual:
                 case ExpressionType.OrElse:
+                case ExpressionType.Or:
+                case ExpressionType.And:
+                case ExpressionType.AndAlso:
                     {
                         BinaryExpression be = exp as BinaryExpression;
                         if (be != null)
                         {
-                            return BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, analyType, isAliases);
+                            return BinarExpressionProvider(be.Left, be.Right, be.NodeType, dbparaList, analyType, isAliases, ref outParaName, leftname, groupDic);
                         }
-                        return DynamicInvokeExpression(exp, exp.NodeType.ToString(), analyType, dbparaList);
+                        return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, leftname);
                     }
                 case ExpressionType.MemberAccess:
                     {
-                        var expression = exp as MemberExpression;
-                        if (expression != null)
-                        {
-                            if (expression.Expression.NodeType == ExpressionType.Parameter)
-                            {
-                                if (isAliases)
-                                {
-                                    return expression.ToString();
-                                }
-                                return expression.Member.Name;
-                            }
-                            MemberExpression mes = expression.Expression as MemberExpression;
-                            if (mes != null && operaType == OperandType.Left)
-                            {
-                                return ExpressionRouter(mes, dbparaList, analyType, isAliases, operaType);
-                            }
-                        }
-                        return DynamicInvokeExpression(exp, exp.NodeType.ToString(), analyType, dbparaList);
+                        return exp.MemberDynamicInvokeExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname);
+                    }
+                case ExpressionType.MemberInit:
+                    {
+                        return exp.MemberDynamicExpressionInitRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname, groupDic);
                     }
                 case ExpressionType.NewArrayBounds:
                 case ExpressionType.NewArrayInit:
                     {
-                        var arrayExpression = exp as NewArrayExpression;
-                        StringBuilder tmpstr = new StringBuilder();
-                        if (arrayExpression != null)
-                        {
-                            tmpstr.Append(string.Join(",", arrayExpression.Expressions.Select(x => ExpressionRouter(x, dbparaList, analyType, isAliases, operaType)).ToArray()));
-                        }
-                        return tmpstr.ToString();
+                        return exp.NewArrayDynamicExpressionInitRouter(dbparaList, analyType, isAliases, operaType, leftname);
                     }
                 case ExpressionType.Call:
                     {
-                        var callExpression = exp as MethodCallExpression;
-                        return CallExpression(callExpression, dbparaList, analyType, isAliases);
+                        return exp.CallExpression(dbparaList, analyType, isAliases, ref outParaName, leftname, groupDic);
+                    }
+                case ExpressionType.New:
+                    {
+                        return exp.NewDynamicInvokeExpressionRouter(dbparaList, analyType, isAliases, ref outParaName, leftname, groupDic);
                     }
                 case ExpressionType.Convert:
                 case ExpressionType.ConvertChecked:
                     {
-                        var convertExpression = exp as UnaryExpression;
-                        if (analyType != AnalyType.Column)
-                        {
-                            if (convertExpression != null && convertExpression.Operand.NodeType == ExpressionType.Call)
-                            {
-                                string[] methodArray = { "ROWCOUNT", "LEN" };
-                                var callExpression = convertExpression.Operand as MethodCallExpression;
-                                if (callExpression != null &&
-                                    methodArray.Any(x => x == callExpression.Method.Name.ToUpper()))
-                                {
-                                    return CallExpression(callExpression, dbparaList, analyType, isAliases);
-                                }
-                            }
-                            return DynamicInvokeExpression(exp, exp.NodeType.ToString(), analyType, dbparaList);
-                        }
-                        if (convertExpression != null)
-                        {
-                            return ExpressionRouter(convertExpression.Operand, dbparaList, analyType, isAliases, operaType);
-                        }
-                        return "";
+                        return exp.ConvertDynamicInvokeExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname, groupDic);
                     }
                 case ExpressionType.Constant:
                     {
-                        var ce = exp as ConstantExpression;
-                        if (ce != null)
-                        {
-                            if (ce.Value == null)
-                            {
-                                return "null";
-                            }
-                            if (dbparaList != null && analyType != AnalyType.Order)
-                            {
-                                DbParameter para = DbHelper.CreateInDbParameter("@" + ce.NodeType, ce.Value);
-                                if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
-                                {
-                                    if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
-                                    {
-                                        para.ParameterName = "@" + ce.NodeType + dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
-                                    }
-                                    dbparaList.Add(para);
-                                }
-                                return para.ParameterName;
-                            }
-                        }
-                        return DynamicInvokeExpression(exp, exp.NodeType.ToString(), analyType, dbparaList);
+                        return exp.ConstantDynamicInvokeExpressionRouter(dbparaList, analyType, leftname);
                     }
                 default:
                     {
-                        return DynamicInvokeExpression(exp, exp.NodeType.ToString(), analyType, dbparaList);
+                        return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, leftname);
                     }
             }
+        }
+
+        internal static string NewArrayDynamicExpressionInitRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType,
+            bool isAliases, OperandType operaType, string leftname)
+        {
+            var arrayExpression = exp as NewArrayExpression;
+            StringBuilder tmpstr = new StringBuilder();
+            if (arrayExpression != null)
+            {
+                tmpstr.Append(string.Join(",",
+                    arrayExpression.Expressions.Select(
+                        x => x.ExpressionRouter(dbparaList, analyType, isAliases, operaType, leftname)).ToArray()));
+            }
+            return tmpstr.ToString();
+        }
+
+        internal static string NewDynamicInvokeExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType
+            , bool isAliases, ref string outParaName, string leftname, Dictionary<string, string> groupDic)
+        {
+            string tmpstr = "";
+            var newExpression = exp as NewExpression;
+            if (newExpression != null)
+            {
+                for (int n = 0; n < newExpression.Arguments.Count; n++)
+                {
+                    string attrstr = newExpression.Arguments[n].ExpressionRouter(dbparaList, AnalyType.Group, isAliases,
+                        OperandType.Left, ref outParaName, leftname, groupDic);
+                    if (!string.IsNullOrEmpty(attrstr))
+                    {
+                        if (analyType == AnalyType.Group)
+                        {
+                            if (groupDic != null && groupDic.ContainsKey(attrstr))
+                            {
+                                groupDic.Add(newExpression.Members[n].Name, groupDic[attrstr]);
+                                groupDic.Remove(attrstr);
+                            }
+                            else
+                            {
+                                if (!string.IsNullOrEmpty(tmpstr))
+                                {
+                                    tmpstr += ",";
+                                }
+                                if (groupDic != null)
+                                {
+                                    groupDic.Add(newExpression.Members[n].Name, attrstr);
+                                }
+                                tmpstr += attrstr;
+                            }
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrEmpty(tmpstr))
+                            {
+                                tmpstr += ",";
+                            }
+                            tmpstr += attrstr;
+                        }
+                    }
+                }
+            }
+            return tmpstr;
+        }
+
+        internal static string ConstantDynamicInvokeExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType,
+            string leftname)
+        {
+            var ce = exp as ConstantExpression;
+            if (ce != null)
+            {
+                if (ce.Value == null)
+                {
+                    return "null";
+                }
+                if (dbparaList != null && analyType != AnalyType.Order)
+                {
+                    string paraName = string.IsNullOrEmpty(leftname) ? ce.NodeType.ToString() : leftname;
+                    DbParameter para = DbHelper.CreateInDbParameter("@" + paraName, ce.Value);
+                    if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
+                    {
+                        if (dbparaList.Any(x => x.ParameterName.StartsWith(para.ParameterName)))
+                        {
+                            para.ParameterName = "@" + paraName +
+                                                 dbparaList.Count(x => x.ParameterName.StartsWith(para.ParameterName));
+                        }
+                        dbparaList.Add(para);
+                    }
+                    return para.ParameterName;
+                }
+            }
+            return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, leftname);
+        }
+
+        internal static string ConvertDynamicInvokeExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType,
+            bool isAliases, OperandType operaType, ref string outParaName, string leftname, Dictionary<string, string> groupDic)
+        {
+            var convertExpression = exp as UnaryExpression;
+            if (analyType != AnalyType.Column)
+            {
+                if (convertExpression != null && convertExpression.Operand.NodeType == ExpressionType.Call)
+                {
+                    string[] methodArray = { "ROWCOUNT", "LEN" };
+                    var callExpression = convertExpression.Operand as MethodCallExpression;
+                    if (callExpression != null &&
+                        methodArray.Any(x => x == callExpression.Method.Name.ToUpper()))
+                    {
+                        return callExpression.CallExpression(dbparaList, analyType, isAliases, leftname, groupDic);
+                    }
+                }
+                return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, leftname);
+            }
+            if (convertExpression != null)
+            {
+                return convertExpression.Operand.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname);
+            }
+            return "";
+        }
+
+        internal static string MemberDynamicExpressionInitRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases,
+            OperandType operaType, ref string outParaName, string leftname, Dictionary<string, string> groupDic)
+        {
+            string strExp = "";
+            var expression = exp as MemberInitExpression;
+            if (expression != null)
+            {
+                foreach (var item in expression.Bindings)
+                {
+                    outParaName = "";
+                    MemberAssignment memaig = item as MemberAssignment;
+                    if (memaig != null)
+                    {
+                        if (!string.IsNullOrEmpty(strExp) && analyType == AnalyType.Column)
+                        {
+                            strExp += ",";
+                        }
+                        var constantExpression = memaig.Expression as ConstantExpression;
+                        if (constantExpression != null)
+                        {
+                            ConstantExpression ce = constantExpression;
+                            if (ce.Value == null)
+                            {
+                                strExp += "NULL";
+                            }
+                            else if (ce.Value is ValueType)
+                            {
+                                strExp += string.Format("{0}", ce.Value);
+                            }
+                            else
+                            {
+                                strExp += string.Format("'{0}'", ce.Value);
+                            }
+                        }
+                        else
+                        {
+                            if (groupDic != null && groupDic.Any())
+                            {
+                                string attrName = memaig.Expression.ExpressionRouter(dbparaList
+                                    , analyType, false, operaType, ref outParaName, leftname);
+                                if (groupDic.ContainsKey(outParaName))
+                                {
+                                    strExp += attrName.Replace(outParaName, groupDic[outParaName]);
+                                }
+                                else
+                                {
+                                    strExp += attrName;
+                                }
+                            }
+                            else
+                            {
+                                strExp += memaig.Expression.ExpressionRouter(dbparaList
+                                    , analyType, isAliases, operaType, ref outParaName, leftname);
+                            }
+                        }
+                        strExp += string.Format(" AS [{0}]", item.Member.Name);
+                    }
+                }
+            }
+            return strExp;
+        }
+
+        internal static string MemberDynamicInvokeExpressionRouter(this Expression exp, List<DbParameter> dbparaList, AnalyType analyType, bool isAliases,
+            OperandType operaType, ref string outParaName, string leftname)
+        {
+            var expression = exp as MemberExpression;
+            if (expression != null)
+            {
+                outParaName = expression.Member.Name;
+                if (expression.Expression.NodeType == ExpressionType.Parameter)
+                {
+                    if (isAliases)
+                    {
+                        return expression.ToString();
+                    }
+                    return expression.Member.Name;
+                }
+                MemberExpression mes = expression.Expression as MemberExpression;
+                if (mes != null && operaType == OperandType.Left)
+                {
+                    return mes.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName);
+                }
+            }
+            return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, (leftname ?? outParaName));
         }
 
         /// <summary>
         /// 获取字段
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
         /// <param name="funColumns"></param>
         /// <param name="saName"></param>
         /// <param name="dbparaList"></param>
         /// <returns></returns>
-        public static string GetColumns<T>(Expression<Func<T, object[]>> funColumns, string saName, ref List<DbParameter> dbparaList) where T : class, new()
+        internal static string GetColumns<T, TKey>(this Expression<Func<T, TKey>> funColumns, string saName, ref List<DbParameter> dbparaList) where T : class, new()
         {
             string strColumns = "*";
             if (funColumns != null)
@@ -902,66 +1334,89 @@ namespace CXData.ORM
                 MethodCallExpression methodCall = funColumns.Body as MethodCallExpression;
                 if (methodCall != null && methodCall.Method.Name.ToUpper() == "COLUMNS")
                 {
-                    NewArrayExpression expressionParams = methodCall.Arguments[1] as NewArrayExpression;
-                    if (expressionParams != null && expressionParams.Expressions.Any())
+                    switch (methodCall.Arguments[1].NodeType)
                     {
-                        strColumns = "";
-                        foreach (Expression ex in expressionParams.Expressions)
-                        {
-                            if (!string.IsNullOrEmpty(strColumns))
+                        case ExpressionType.MemberAccess:
                             {
-                                strColumns += ",";
+                                strColumns = methodCall.Arguments[1].ExpressionRouter(null, AnalyType.Column, false, OperandType.Left);
+                                break;
                             }
-                            UnaryExpression ue = ex as UnaryExpression;
-                            if (ue != null)
+                        case ExpressionType.NewArrayBounds:
+                        case ExpressionType.NewArrayInit:
                             {
-                                MethodCallExpression met = ue.Operand as MethodCallExpression;
-                                if (met != null)
+                                NewArrayExpression expressionParams = methodCall.Arguments[1] as NewArrayExpression;
+                                if (expressionParams != null && expressionParams.Expressions.Any())
                                 {
-                                    switch (met.Method.Name.ToUpper())
+                                    strColumns = "";
+                                    foreach (Expression ex in expressionParams.Expressions)
                                     {
-                                        case "AS":
-                                            strColumns += ExpressionRouter(ex, dbparaList, AnalyType.Column, false, OperandType.Left);
-                                            break;
-                                        case "SUMVALUE":
-                                            strColumns += string.Format("{0}", ExpressionRouter(ex, null, AnalyType.Column, true, OperandType.Left));
-                                            break;
-                                        default:
-                                            if (string.IsNullOrEmpty(saName))
+                                        if (!string.IsNullOrEmpty(strColumns))
+                                        {
+                                            strColumns += ",";
+                                        }
+                                        UnaryExpression ue = ex as UnaryExpression;
+                                        if (ue != null)
+                                        {
+                                            MethodCallExpression met = ue.Operand as MethodCallExpression;
+                                            if (met != null)
                                             {
-                                                strColumns += ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left);
+                                                switch (met.Method.Name.ToUpper())
+                                                {
+                                                    case "AS":
+                                                        strColumns += ex.ExpressionRouter(dbparaList, AnalyType.Column,
+                                                            false, OperandType.Left);
+                                                        break;
+                                                    case "SUMVALUE":
+                                                        strColumns += string.Format("{0}",
+                                                            ex.ExpressionRouter(null, AnalyType.Column, true,
+                                                                OperandType.Left));
+                                                        break;
+                                                    default:
+                                                        if (string.IsNullOrEmpty(saName))
+                                                        {
+                                                            strColumns += ex.ExpressionRouter(null, AnalyType.Column, false,
+                                                                OperandType.Left);
+                                                        }
+                                                        else
+                                                        {
+                                                            strColumns += string.Format("{0}.{1}", saName,
+                                                                ex.ExpressionRouter(null, AnalyType.Column, false,
+                                                                    OperandType.Left));
+                                                        }
+                                                        break;
+                                                }
                                             }
                                             else
                                             {
-                                                strColumns += string.Format("{0}.{1}", saName, ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left));
+                                                if (string.IsNullOrEmpty(saName))
+                                                {
+                                                    strColumns += ex.ExpressionRouter(null, AnalyType.Column, false,
+                                                        OperandType.Left);
+                                                }
+                                                else
+                                                {
+                                                    strColumns += string.Format("{0}.{1}", saName,
+                                                        ex.ExpressionRouter(null, AnalyType.Column, false, OperandType.Left));
+                                                }
                                             }
-                                            break;
-                                    }
-                                }
-                                else
-                                {
-                                    if (string.IsNullOrEmpty(saName))
-                                    {
-                                        strColumns += ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left);
-                                    }
-                                    else
-                                    {
-                                        strColumns += string.Format("{0}.{1}", saName, ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left));
+                                        }
+                                        else
+                                        {
+                                            if (string.IsNullOrEmpty(saName))
+                                            {
+                                                strColumns += ex.ExpressionRouter(null, AnalyType.Column, false,
+                                                    OperandType.Left);
+                                            }
+                                            else
+                                            {
+                                                strColumns += string.Format("{0}.{1}", saName,
+                                                    ex.ExpressionRouter(null, AnalyType.Column, false, OperandType.Left));
+                                            }
+                                        }
                                     }
                                 }
                             }
-                            else
-                            {
-                                if (string.IsNullOrEmpty(saName))
-                                {
-                                    strColumns += ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left);
-                                }
-                                else
-                                {
-                                    strColumns += string.Format("{0}.{1}", saName, ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left));
-                                }
-                            }
-                        }
+                            break;
                     }
                 }
             }
@@ -975,7 +1430,7 @@ namespace CXData.ORM
         /// <param name="obje"></param>
         /// <param name="dbparaList"></param>
         /// <returns></returns>
-        public static string GetInsertSql<T>(T obje, List<DbParameter> dbparaList) where T : class
+        internal static string GetInsertSql<T>(T obje, List<DbParameter> dbparaList) where T : class
         {
             Type type = obje.GetType();
             System.Reflection.PropertyInfo[] ps = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
@@ -1006,7 +1461,6 @@ namespace CXData.ORM
                                 columnValuestr.Append(",");
                             }
                             columnNamestr.Append(name);
-                            Type attrValType = i.PropertyType.IsGenericType && i.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? Nullable.GetUnderlyingType(i.PropertyType) : i.PropertyType;
                             DbParameter para = DbHelper.CreateInDbParameter("@" + name, obj);
                             if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                             {
@@ -1027,15 +1481,7 @@ namespace CXData.ORM
                 if (columnNamestr.Length > 0)
                 {
                     string sql = string.Format("INSERT INTO {0}({1})VALUES({2}); ", tableName, columnNamestr, columnValuestr);
-                    switch (DbHelper.GetDatabaseType())
-                    {
-                        case DatabaseType.SqlServer:
-                            sql += identity ? "SELECT SCOPE_IDENTITY();" : "SELECT @@ROWCOUNT;";
-                            break;
-                        case DatabaseType.MySql:
-                            sql += identity ? "SELECT LAST_INSERT_ID();" : "SELECT ROW_COUNT();";
-                            break;
-                    }
+                    sql += identity ? DbHelper.GetIDENTITYSql() : DbHelper.GetRowCoutSql();
                     return sql;
                 }
             }
@@ -1051,7 +1497,7 @@ namespace CXData.ORM
         /// <param name="strWhere"></param>
         /// <param name="dbparaList"></param>
         /// <returns></returns>
-        public static string GetUpdateSql<T>(T obje, string[] dataField, string strWhere, List<DbParameter> dbparaList) where T : class
+        internal static string GetUpdateSql<T>(T obje, string[] dataField, string strWhere, List<DbParameter> dbparaList) where T : class
         {
             Type type = obje.GetType();
             System.Reflection.PropertyInfo[] ps = type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
@@ -1075,7 +1521,6 @@ namespace CXData.ORM
                         {
                             sql += ",";
                         }
-                        Type attrValType = i.PropertyType.IsGenericType && i.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>) ? Nullable.GetUnderlyingType(i.PropertyType) : i.PropertyType;
                         DbParameter para = DbHelper.CreateInDbParameter("@" + name, obj);
                         if (!dbparaList.Any(x => x.ParameterName == para.ParameterName && x.Value.Equals(para.Value)))
                         {
@@ -1101,18 +1546,36 @@ namespace CXData.ORM
         /// 获取实体更新的字段
         /// </summary>
         /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TKey"></typeparam>
         /// <param name="funColumns"></param>
         /// <returns></returns>
-        public static string[] GetUpdateColumns<T>(Expression<Func<T, object[]>> funColumns) where T : class
+        internal static string[] GetUpdateColumns<T, TKey>(Expression<Func<T, TKey>> funColumns) where T : class
         {
             List<string> strColumns = new List<string>();
-            MethodCallExpression methodCall = funColumns?.Body as MethodCallExpression;
+            MethodCallExpression methodCall = funColumns != null ? funColumns.Body as MethodCallExpression : null;
             if (methodCall != null && methodCall.Method.Name.ToUpper() == "COLUMNS")
             {
-                NewArrayExpression expressionParams = methodCall.Arguments[1] as NewArrayExpression;
-                if (expressionParams != null && expressionParams.Expressions.Count > 0)
+                switch (methodCall.Arguments[1].NodeType)
                 {
-                    strColumns.AddRange(expressionParams.Expressions.Select(ex => ExpressionRouter(ex, null, AnalyType.Column, false, OperandType.Left)));
+                    case ExpressionType.MemberAccess:
+                        {
+                            var expression = methodCall.Arguments[1] as MemberExpression;
+                            if (expression != null)
+                            {
+                                strColumns.Add(expression.ExpressionRouter(null, AnalyType.Column, false, OperandType.Left));
+                            }
+                            break;
+                        }
+                    case ExpressionType.NewArrayBounds:
+                    case ExpressionType.NewArrayInit:
+                        {
+                            NewArrayExpression expressionParams = methodCall.Arguments[1] as NewArrayExpression;
+                            if (expressionParams != null && expressionParams.Expressions.Count > 0)
+                            {
+                                strColumns.AddRange(expressionParams.Expressions.Select(ex => ex.ExpressionRouter(null, AnalyType.Column, false, OperandType.Left)));
+                            }
+                            break;
+                        }
                 }
             }
             string[] updateColumns = strColumns.ToArray();
@@ -1124,7 +1587,7 @@ namespace CXData.ORM
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static string ExpressionTypeCast(ExpressionType type)
+        internal static string ExpressionTypeCast(ExpressionType type)
         {
             switch (type)
             {
@@ -1163,32 +1626,12 @@ namespace CXData.ORM
         }
 
         /// <summary>
-        /// 表达式解析调用
-        /// </summary>
-        /// <param name="exp"></param>
-        /// <returns></returns>
-        public static object InternalCall(Expression exp)
-        {
-            ConstantExpression cexp = exp as ConstantExpression;
-            if (cexp != null)
-            {
-                return cexp.Value;
-            }
-            ParameterExpression pexp = exp as ParameterExpression;
-            if (pexp != null)
-            {
-                return pexp;
-            }
-            return Expression.Lambda(exp).Compile().DynamicInvoke();
-        }
-
-        /// <summary>
         /// 获取实体映射的表名
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="obje"></param>
         /// <returns></returns>
-        public static string GetTabName<T>(T obje) where T : class
+        internal static string GetTabName<T>(T obje) where T : class
         {
             string tabName = "";
             TableAttribute[] cusAttrs = typeof(T).GetCustomAttributes(typeof(TableAttribute), true) as TableAttribute[];
