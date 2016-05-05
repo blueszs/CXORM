@@ -899,8 +899,6 @@ namespace CXData.ORM
             return new List<TResult>();
         }
 
-
-
         /// <summary>
         /// 根据连接表按条件返回数据库中对应的第一个实体数据
         /// </summary>
@@ -988,7 +986,6 @@ namespace CXData.ORM
         /// <param name="joinType1"></param>
         /// <param name="outerKeySelector"></param>
         /// <param name="innerKeySelector"></param>
-        /// <param name="inner1"></param>
         /// <param name="inner2"></param>
         /// <param name="joinType2"></param>
         /// <param name="innerKeySelector1"></param>
@@ -997,13 +994,13 @@ namespace CXData.ORM
         /// <param name="whereSelector"></param>
         /// <param name="funOrder"></param>
         /// <returns></returns>
-        public static TResult JoinOnFirst<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner inner1, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
+        public static TResult JoinOnFirst<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
             where TResult : class, new()
         {
-            if (inner != null && inner1 != null && inner2 != null && outerKeySelector != null && innerKeySelector != null && innerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
+            if (inner != null && inner2 != null && outerKeySelector != null && innerKeySelector != null && innerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
             {
                 string tablenameA = LambdaExtension.GetTabName(outer);
                 string tablenameB = LambdaExtension.GetTabName(inner);
@@ -1083,7 +1080,6 @@ namespace CXData.ORM
         /// <param name="joinType1"></param>
         /// <param name="outerKeySelector"></param>
         /// <param name="innerKeySelector"></param>
-        /// <param name="outer1"></param>
         /// <param name="inner2"></param>
         /// <param name="joinType2"></param>
         /// <param name="outerKeySelector1"></param>
@@ -1092,13 +1088,13 @@ namespace CXData.ORM
         /// <param name="whereSelector"></param>
         /// <param name="funOrder"></param>
         /// <returns></returns>
-        public static TResult JoinOnFirst<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TOuter outer1, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
+        public static TResult JoinOnFirst<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
             where TResult : class, new()
         {
-            if (inner != null && outer1 != null && inner2 != null && outerKeySelector != null && innerKeySelector != null && outerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
+            if (inner != null && inner2 != null && outerKeySelector != null && innerKeySelector != null && outerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
             {
                 string tablenameA = LambdaExtension.GetTabName(outer);
                 string tablenameB = LambdaExtension.GetTabName(inner);
@@ -1359,7 +1355,6 @@ namespace CXData.ORM
         /// <param name="joinType1"></param>
         /// <param name="outerKeySelector"></param>
         /// <param name="innerKeySelector"></param>
-        /// <param name="inner1"></param>
         /// <param name="inner2"></param>
         /// <param name="joinType2"></param>
         /// <param name="innerKeySelector1"></param>
@@ -1371,13 +1366,13 @@ namespace CXData.ORM
         /// <param name="pageIndex"></param>
         /// <param name="totalRecord"></param>
         /// <returns></returns>
-        public static List<TResult> JoinOnList<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner inner1, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
+        public static List<TResult> JoinOnList<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
             where TResult : class, new()
         {
-            if (inner != null && inner1 != null && inner2 != null && outerKeySelector != null && innerKeySelector != null && innerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
+            if (inner != null  && inner2 != null && outerKeySelector != null && innerKeySelector != null && innerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
             {
                 string tablenameA = LambdaExtension.GetTabName(outer);
                 string tablenameB = LambdaExtension.GetTabName(inner);
@@ -1485,7 +1480,6 @@ namespace CXData.ORM
         /// <param name="joinType1"></param>
         /// <param name="outerKeySelector"></param>
         /// <param name="innerKeySelector"></param>
-        /// <param name="outer1"></param>
         /// <param name="inner2"></param>
         /// <param name="joinType2"></param>
         /// <param name="outerKeySelector1"></param>
@@ -1497,13 +1491,13 @@ namespace CXData.ORM
         /// <param name="pageIndex"></param>
         /// <param name="totalRecord"></param>
         /// <returns></returns>
-        public static List<TResult> JoinOnList<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TOuter outer1, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
+        public static List<TResult> JoinOnList<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
             where TResult : class, new()
         {
-            if (inner != null && outer1 != null && inner2 != null && outerKeySelector != null && innerKeySelector != null && outerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
+            if (inner != null && inner2 != null && outerKeySelector != null && innerKeySelector != null && outerKeySelector1 != null && innerKeySelector2 != null && resultSelector != null)
             {
                 string tablenameA = LambdaExtension.GetTabName(outer);
                 string tablenameB = LambdaExtension.GetTabName(inner);

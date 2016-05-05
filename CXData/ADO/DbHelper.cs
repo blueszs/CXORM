@@ -403,5 +403,79 @@ namespace CXData.ADO
             }
         }
         #endregion
+        #region Get Limit Sql
+        public static string GetSelectLimitSql(string tableName, string strColumns, string whereStr, string orderBystr, int limit)
+        {
+            return _dataProviders.GetSelectLimitSql(tableName, strColumns, whereStr, orderBystr, limit);
+        }
+
+        public static string GetJoinLimitSql(string tableNameA, string tableNameB, string keyA, string keyB,
+            string joinType,
+            string strColumns, string whereStr, string orderBystr, int limit)
+        {
+            return _dataProviders.GetJoinLimitSql(tableNameA, tableNameB, keyA, keyB, joinType, strColumns, whereStr, orderBystr, limit);
+        }
+
+        public static string GetJoinLimitSql(string tableNameA, string tableNameB, string tableNameC, string keyA, string keyB,
+            string keyB1, string keyC, string joinType1, string joinType2, string strColumns, string whereStr,
+            string orderBystr, int limit)
+        {
+            return _dataProviders.GetJoinLimitSql(tableNameA, tableNameB, tableNameC, keyA, keyB,
+            keyB1, keyC, joinType1, joinType2, strColumns, whereStr, orderBystr, limit);
+        }
+
+        public static string GetGroupLimitSql(string tableName, string strColumns, string whereStr, string keystr,
+            string orderBystr, int limit)
+        {
+            return _dataProviders.GetGroupLimitSql(tableName, strColumns, whereStr, keystr, orderBystr, limit);
+        }
+
+        public static string GetJoinGroupLimitSql(string tableNameA, string tableNameB, string keyA, string keyB,
+            string joinType,
+            string strColumns, string whereStr, string keystr, string orderBystr, int limit)
+        {
+            return _dataProviders.GetJoinGroupLimitSql(tableNameA, tableNameB, keyA, keyB, joinType, strColumns, whereStr, keystr, orderBystr, limit);
+        }
+
+        #endregion
+
+        #region Get Page Sql
+        public static string GetPageSql(string tableName, string strColumns, string whereStr, string orderBystr, int pageSize,
+            int pageIndex)
+        {
+            return _dataProviders.GetPageSql(tableName, strColumns, whereStr, orderBystr, pageSize, pageIndex);
+        }
+
+        public static string GetJoinGroupPageSql(string tableNameA, string tableNameB, string keyA, string keyB, string joinType,
+            string strColumns, string whereStr, string keystr, string orderBystr, int pageSize, int pageIndex)
+        {
+            return _dataProviders.GetJoinGroupPageSql(tableNameA, tableNameB, keyA, keyB, joinType,
+            strColumns, whereStr, keystr, orderBystr, pageSize, pageIndex);
+        }
+
+        public static string GetJoinPageSql(string tableNameA, string tableNameB, string keyA, string keyB, string joinType,
+            string strColumns, string whereStr, string orderBystr, int pageSize, int pageIndex)
+        {
+            return _dataProviders.GetJoinPageSql(tableNameA, tableNameB, keyA, keyB, joinType,
+            strColumns, whereStr, orderBystr, pageSize, pageIndex);
+        }
+
+        public static string GetJoinPageSql(string tableNameA, string tableNameB, string tableNameC, string keyA, string keyB,
+            string joinType1, string keyA1, string keyC, string joinType2, string strColumns, string whereStr, string orderBystr,
+            int pageSize, int pageIndex)
+        {
+            return _dataProviders.GetJoinPageSql(tableNameA, tableNameB, tableNameC, keyA, keyB,
+                joinType1, keyA1, keyC, joinType2, strColumns, whereStr, orderBystr, pageSize, pageIndex);
+        }
+
+        public static string GetRowCoutSql()
+        {
+            return _dataProviders.GetRowCoutSql();
+        }
+        public static string GetIDENTITYSql()
+        {
+            return _dataProviders.GetIDENTITYSql();
+        }
+        #endregion
     }
 }
