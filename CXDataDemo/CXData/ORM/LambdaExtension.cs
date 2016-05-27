@@ -1222,6 +1222,10 @@ namespace CXData.ORM
                         return callExpression.CallExpression(dbparaList, analyType, isAliases, leftname, groupDic);
                     }
                 }
+				if (operaType == OperandType.Left)
+                {
+                    return convertExpression.Operand.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname);
+                }
                 return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, leftname);
             }
             if (convertExpression != null)
