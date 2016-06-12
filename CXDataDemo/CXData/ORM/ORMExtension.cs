@@ -21,7 +21,7 @@ namespace CXData.ORM {
         /// <param name="entity"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static bool DeleteFrom<T>(this T entity, Expression<Func<T, bool>> func) where T : class, new() {
+        public static bool Delete<T>(this T entity, Expression<Func<T, bool>> func) where T : class, new() {
             List<DbParameter> dbparaList = new List<DbParameter>();
             string sql = string.Format("DELETE FROM {0}", LambdaExtension.GetTabName(entity));
             string whereStr = string.Empty;
@@ -44,7 +44,7 @@ namespace CXData.ORM {
         /// <param name="funColumns"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static bool UpdateSet<T, TKey>(this T entity, T updateEntity, Expression<Func<T, TKey>> funColumns, Expression<Func<T, bool>> func) where T : class {
+        public static bool Update<T, TKey>(this T entity, T updateEntity, Expression<Func<T, TKey>> funColumns, Expression<Func<T, bool>> func) where T : class {
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (updateEntity != null && funColumns != null) {
                 string whereStr = string.Empty;
@@ -69,7 +69,7 @@ namespace CXData.ORM {
         /// <param name="funColumns"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static bool UpdateSet<T, TKey>(this T entity, Expression<Func<T, TKey>> funColumns, Expression<Func<T, bool>> func) where T : class {
+        public static bool Update<T, TKey>(this T entity, Expression<Func<T, TKey>> funColumns, Expression<Func<T, bool>> func) where T : class {
             List<DbParameter> dbparaList = new List<DbParameter>();
             if (entity != null && funColumns != null) {
                 string whereStr = string.Empty;
@@ -91,7 +91,7 @@ namespace CXData.ORM {
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
         /// <returns></returns>
-        public static int InsertInto<T>(this T entity) where T : class {
+        public static int Insert<T>(this T entity) where T : class {
             int index = 0;
             if (entity != null) {
                 List<DbParameter> dbparaList = new List<DbParameter>();
@@ -111,7 +111,7 @@ namespace CXData.ORM {
         /// <param name="entity"></param>
         /// <param name="insertEntity"></param>
         /// <returns></returns>
-        public static int InsertInto<T>(this T entity, T insertEntity) where T : class {
+        public static int Insert<T>(this T entity, T insertEntity) where T : class {
             int index = 0;
             if (insertEntity != null) {
                 List<DbParameter> dbparaList = new List<DbParameter>();
@@ -131,8 +131,8 @@ namespace CXData.ORM {
         /// <param name="entity"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static T SelectFirst<T>(this T entity, Expression<Func<T, bool>> func) where T : class, new() {
-            return entity.SelectFirst(func, null);
+        public static T Find<T>(this T entity, Expression<Func<T, bool>> func) where T : class, new() {
+            return entity.Find(func, null);
         }
 
         /// <summary>
@@ -143,7 +143,7 @@ namespace CXData.ORM {
         /// <param name="func"></param>
         /// <param name="funOrder"></param>
         /// <returns></returns>
-        public static T SelectFirst<T>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, bool>> funOrder) where T : class, new() {
+        public static T Find<T>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, bool>> funOrder) where T : class, new() {
             string saName = "";
             string whereStr = string.Empty;
             string orderBystr = string.Empty;
@@ -180,10 +180,10 @@ namespace CXData.ORM {
         /// <param name="func"></param>
         /// <param name="resultSelector"></param>
         /// <returns></returns>
-        public static TResult SelectFirst<T, TResult>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, TResult>> resultSelector)
+        public static TResult Find<T, TResult>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, TResult>> resultSelector)
             where T : class
             where TResult : class, new() {
-            return entity.SelectFirst(func, resultSelector, null);
+            return entity.Find(func, resultSelector, null);
         }
 
 
@@ -197,7 +197,7 @@ namespace CXData.ORM {
         /// <param name="resultSelector"></param>
         /// <param name="funOrder"></param>
         /// <returns></returns>
-        public static TResult SelectFirst<T, TResult>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, TResult>> resultSelector, Expression<Func<T, bool>> funOrder)
+        public static TResult Find<T, TResult>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, TResult>> resultSelector, Expression<Func<T, bool>> funOrder)
             where T : class
             where TResult : class, new() {
             string saName = "";
@@ -246,7 +246,7 @@ namespace CXData.ORM {
         /// <param name="resultSelector"></param>
         /// <param name="whereFunc"></param>
         /// <returns></returns>
-        public static TResult GroupByFirst<T, TKey, TResult>(this T source, Expression<Func<T, TKey>> keySelector, Expression<Func<T, TResult>> resultSelector, Expression<Func<T, bool>> whereFunc)
+        public static TResult Find<T, TKey, TResult>(this T source, Expression<Func<T, TKey>> keySelector, Expression<Func<T, TResult>> resultSelector, Expression<Func<T, bool>> whereFunc)
             where T : class
             where TResult : class, new() {
             if (keySelector != null) {
@@ -306,7 +306,7 @@ namespace CXData.ORM {
         /// <param name="resultSelector"></param>
         /// <param name="whereFunc"></param>
         /// <returns></returns>
-        public static List<TResult> GroupByList<T, TKey, TResult>(this T source, Expression<Func<T, TKey>> keySelector, Expression<Func<T, TResult>> resultSelector, Expression<Func<T, bool>> whereFunc)
+        public static List<TResult> Where<T, TKey, TResult>(this T source, Expression<Func<T, TKey>> keySelector, Expression<Func<T, TResult>> resultSelector, Expression<Func<T, bool>> whereFunc)
             where T : class
             where TResult : class, new() {
             if (keySelector != null) {
@@ -359,9 +359,9 @@ namespace CXData.ORM {
         /// <param name="entity"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static List<T> SelectList<T>(this T entity, Expression<Func<T, bool>> func)
+        public static List<T> Where<T>(this T entity, Expression<Func<T, bool>> func)
             where T : class, new() {
-            return SelectList(entity, func, 0, null);
+            return Where(entity, func, 0, null);
         }
 
         /// <summary>
@@ -373,10 +373,10 @@ namespace CXData.ORM {
         /// <param name="func"></param>
         /// <param name="resultSelector"></param>
         /// <returns></returns>
-        public static List<TResult> SelectList<T, TResult>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, TResult>> resultSelector)
+        public static List<TResult> Where<T, TResult>(this T entity, Expression<Func<T, bool>> func, Expression<Func<T, TResult>> resultSelector)
             where T : class
             where TResult : class, new() {
-            return SelectList(entity, func, 0, null, resultSelector);
+            return Where(entity, func, 0, null, resultSelector);
         }
 
         /// <summary>
@@ -388,7 +388,7 @@ namespace CXData.ORM {
         /// <param name="rowNum"></param>
         /// <param name="funOrder"></param>
         /// <returns></returns>
-        public static List<T> SelectList<T>(this T entity, Expression<Func<T, bool>> func, int rowNum, Expression<Func<T, bool>> funOrder)
+        public static List<T> Where<T>(this T entity, Expression<Func<T, bool>> func, int rowNum, Expression<Func<T, bool>> funOrder)
             where T : class, new() {
             string whereStr = string.Empty;
             string tableName = LambdaExtension.GetTabName(entity);
@@ -422,7 +422,7 @@ namespace CXData.ORM {
         /// <param name="funOrder"></param>
         /// <param name="resultSelector"></param>
         /// <returns></returns>
-        public static List<TResult> SelectList<T, TResult>(this T entity, Expression<Func<T, bool>> func, int rowNum, Expression<Func<T, bool>> funOrder, Expression<Func<T, TResult>> resultSelector)
+        public static List<TResult> Where<T, TResult>(this T entity, Expression<Func<T, bool>> func, int rowNum, Expression<Func<T, bool>> funOrder, Expression<Func<T, TResult>> resultSelector)
             where T : class
             where TResult : class, new() {
             string whereStr = string.Empty;
@@ -467,7 +467,7 @@ namespace CXData.ORM {
         /// <param name="totalRecord"></param>
         /// <param name="funColumns"></param>
         /// <returns></returns>
-        public static List<T> SelectList<T, TKey>(this T entity, Expression<Func<T, bool>> func,
+        public static List<T> Where<T, TKey>(this T entity, Expression<Func<T, bool>> func,
             Expression<Func<T, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord,
             Expression<Func<T, TKey>> funColumns = null)
             where T : class, new() {
@@ -530,7 +530,7 @@ namespace CXData.ORM {
         /// <param name="totalRecord"></param>
         /// <param name="resultSelector"></param>
         /// <returns></returns>
-        public static List<TResult> SelectList<T, TResult>(this T entity, Expression<Func<T, bool>> func,
+        public static List<TResult> Where<T, TResult>(this T entity, Expression<Func<T, bool>> func,
             Expression<Func<T, bool>> funOrder, Expression<Func<T, TResult>> resultSelector, int pageSize, int pageIndex, ref int totalRecord)
             where T : class
             where TResult : class, new() {
@@ -597,7 +597,7 @@ namespace CXData.ORM {
         /// <param name="resultSelector"></param>
         /// <param name="whereSelector"></param>
         /// <returns></returns>
-        public static TResult JoinGroupByFirst<TOuter, TInner, TKey, TGroup, TResult>(this TOuter outer, TInner inner, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, JoinType joinType, Expression<Func<TOuter, TInner, TGroup>> groupkeyFunc, Expression<Func<TGroup, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector)
+        public static TResult Find<TOuter, TInner, TKey, TGroup, TResult>(this TOuter outer, TInner inner, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, JoinType joinType, Expression<Func<TOuter, TInner, TGroup>> groupkeyFunc, Expression<Func<TGroup, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector)
             where TOuter : class, new()
             where TInner : class, new()
             where TResult : class, new() {
@@ -697,7 +697,7 @@ namespace CXData.ORM {
         /// <param name="pageIndex"></param>
         /// <param name="totalRecord"></param>
         /// <returns></returns>
-        public static List<TResult> JoinGroupByList<TOuter, TInner, TKey, TGroup, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TGroup>> groupkeyFunc, Expression<Func<TGroup, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector, Expression<Func<TGroup, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
+        public static List<TResult> Where<TOuter, TInner, TKey, TGroup, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TGroup>> groupkeyFunc, Expression<Func<TGroup, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector, Expression<Func<TGroup, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
             where TOuter : class, new()
             where TInner : class, new()
             where TResult : class, new() {
@@ -779,7 +779,7 @@ namespace CXData.ORM {
         /// <param name="resultSelector"></param>
         /// <param name="whereFunc"></param>
         /// <returns></returns>
-        public static TResult JoinOnFirst<TOuter, TInner, TKey, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereFunc)
+        public static TResult Find<TOuter, TInner, TKey, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereFunc)
             where TOuter : class, new()
             where TInner : class, new()
             where TResult : class, new() {
@@ -850,7 +850,7 @@ namespace CXData.ORM {
         /// <param name="whereSelector"></param>
         /// <param name="funOrder"></param>
         /// <returns></returns>
-        public static TResult JoinOnFirst<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner inner1, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
+        public static TResult Find<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner inner1, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
@@ -933,7 +933,7 @@ namespace CXData.ORM {
         /// <param name="whereSelector"></param>
         /// <param name="funOrder"></param>
         /// <returns></returns>
-        public static TResult JoinOnFirst<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TOuter outer2, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
+        public static TResult Find<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TOuter outer2, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
@@ -1007,7 +1007,7 @@ namespace CXData.ORM {
         /// <param name="resultSelector"></param>
         /// <param name="whereFunc"></param>
         /// <returns></returns>
-        public static List<TResult> JoinOnList<TOuter, TInner, TKey, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereFunc)
+        public static List<TResult> Where<TOuter, TInner, TKey, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereFunc)
             where TOuter : class, new()
             where TInner : class, new()
             where TResult : class, new() {
@@ -1075,7 +1075,7 @@ namespace CXData.ORM {
         /// <param name="pageIndex"></param>
         /// <param name="totalRecord"></param>
         /// <returns></returns>
-        public static List<TResult> JoinOnList<TOuter, TInner, TKey, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector, Expression<Func<TOuter, TInner, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
+        public static List<TResult> Where<TOuter, TInner, TKey, TResult>(this TOuter outer, TInner inner, JoinType joinType, Expression<Func<TOuter, TKey>> outerKeySelector, Expression<Func<TInner, TKey>> innerKeySelector, Expression<Func<TOuter, TInner, TResult>> resultSelector, Expression<Func<TOuter, TInner, bool>> whereSelector, Expression<Func<TOuter, TInner, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
             where TOuter : class, new()
             where TInner : class, new()
             where TResult : class, new() {
@@ -1175,7 +1175,7 @@ namespace CXData.ORM {
         /// <param name="pageIndex"></param>
         /// <param name="totalRecord"></param>
         /// <returns></returns>
-        public static List<TResult> JoinOnList<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner inner1, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
+        public static List<TResult> Where<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TInner inner1, TInner2 inner2, JoinType joinType2, Expression<Func<TInner, TKey2>> innerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
@@ -1285,7 +1285,7 @@ namespace CXData.ORM {
         /// <param name="pageIndex"></param>
         /// <param name="totalRecord"></param>
         /// <returns></returns>
-        public static List<TResult> JoinOnList<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TOuter outer2, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
+        public static List<TResult> Where<TOuter, TInner, TInner2, TKey1, TKey2, TResult>(this TOuter outer, TInner inner, JoinType joinType1, Expression<Func<TOuter, TKey1>> outerKeySelector, Expression<Func<TInner, TKey1>> innerKeySelector, TOuter outer2, TInner2 inner2, JoinType joinType2, Expression<Func<TOuter, TKey2>> outerKeySelector1, Expression<Func<TInner2, TKey2>> innerKeySelector2, Expression<Func<TOuter, TInner, TInner2, TResult>> resultSelector, Expression<Func<TOuter, TInner, TInner2, bool>> whereSelector, Expression<Func<TOuter, TInner, TInner2, bool>> funOrder, int pageSize, int pageIndex, ref int totalRecord)
             where TOuter : class, new()
             where TInner : class, new()
             where TInner2 : class, new()
@@ -1377,7 +1377,7 @@ namespace CXData.ORM {
         /// <param name="entity"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static int GetRowCount<T>(this T entity, Expression<Func<T, bool>> func) where T : class {
+        public static int RowCount<T>(this T entity, Expression<Func<T, bool>> func) where T : class {
             string whereStr = string.Empty;
             string tableName = LambdaExtension.GetTabName(entity);
             List<DbParameter> dbparaList = new List<DbParameter>();
@@ -1398,7 +1398,7 @@ namespace CXData.ORM {
         /// <param name="entity"></param>
         /// <param name="func"></param>
         /// <returns></returns>
-        public static bool GetExists<T>(this T entity, Expression<Func<T, bool>> func) where T : class {
+        public static bool Exists<T>(this T entity, Expression<Func<T, bool>> func) where T : class {
             List<DbParameter> dbparaList = new List<DbParameter>();
             string whereStr = string.Empty;
             string tableName = LambdaExtension.GetTabName(entity);

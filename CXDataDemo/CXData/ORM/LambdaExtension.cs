@@ -1212,19 +1212,22 @@ namespace CXData.ORM
             var convertExpression = exp as UnaryExpression;
             if (analyType != AnalyType.Column)
             {
-                if (convertExpression != null && convertExpression.Operand.NodeType == ExpressionType.Call)
+                if (convertExpression != null)
                 {
-                    string[] methodArray = { "ROWCOUNT", "LEN" };
-                    var callExpression = convertExpression.Operand as MethodCallExpression;
-                    if (callExpression != null &&
-                        methodArray.Any(x => x == callExpression.Method.Name.ToUpper()))
+                    if (convertExpression.Operand.NodeType == ExpressionType.Call)
                     {
-                        return callExpression.CallExpression(dbparaList, analyType, isAliases, leftname, groupDic);
+                        string[] methodArray = { "ROWCOUNT", "LEN" };
+                        var callExpression = convertExpression.Operand as MethodCallExpression;
+                        if (callExpression != null &&
+                            methodArray.Any(x => x == callExpression.Method.Name.ToUpper()))
+                        {
+                            return callExpression.CallExpression(dbparaList, analyType, isAliases, leftname, groupDic);
+                        }
                     }
-                }
-				if (operaType == OperandType.Left)
-                {
-                    return convertExpression.Operand.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname);
+                    if (operaType == OperandType.Left)
+                    {
+                        return convertExpression.Operand.ExpressionRouter(dbparaList, analyType, isAliases, operaType, ref outParaName, leftname);
+                    }
                 }
                 return exp.DynamicInvokeExpression(exp.NodeType.ToString(), analyType, dbparaList, leftname);
             }
